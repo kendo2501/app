@@ -5,14 +5,14 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI, {
-      dbName: process.env.DB_NAME || 'numerology', // Lấy tên database từ biến môi trường hoặc mặc định là 'numerology'
+      dbName: process.env.DB_NAME || 'numerology', 
       useNewUrlParser: true, 
       useUnifiedTopology: true,
     });
     console.log('✅ Kết nối MongoDB Atlas thành công');
   } catch (err) {
     console.error('❌ Lỗi kết nối MongoDB:', err);
-    process.exit(1); // Dừng chương trình nếu kết nối thất bại
+    process.exit(1); 
   }
 };
 
