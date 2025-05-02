@@ -1,19 +1,26 @@
-require('dotenv').config(); // Load biến môi trường từ file .env
+require('dotenv').config()
+const mysql = require('mysql2/promise');
 const mongoose = require('mongoose');
 
-// Hàm kết nối MongoDB
-const connectDB = async () => {
+async function connectMongoDB() {
   try {
     await mongoose.connect(process.env.MONGO_URI, {
       dbName: process.env.DB_NAME || 'numerology', 
       useNewUrlParser: true, 
       useUnifiedTopology: true,
     });
-    console.log('✅ Kết nối MongoDB Atlas thành công');
-  } catch (err) {
-    console.error('❌ Lỗi kết nối MongoDB:', err);
-    process.exit(1); 
+    console.log('Connected to MongoDB Atlas');
+  } catch (error) {
+    console.error('Error connecting to MongoDB Atlas:', error);
+    throw error;
   }
-};
+}
 
-module.exports = connectDB; // Xuất hàm để sử dụng trong server.js
+const pool = mysql.createPool({
+  host: process.env.MYSQL_HOST,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
+});
+
+module.exports = { connectMongoDB, pool };
