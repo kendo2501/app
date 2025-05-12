@@ -1,27 +1,99 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react'; // Import React (không bắt buộc trong các phiên bản React mới hơn nhưng vẫn là thực hành tốt)
-import { StyleSheet, Text, View } from 'react-native';
+import { calculateCombinedMap } from '@/untils/calculatorsumary';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-export default function App() {
-  return (
-    // View là component container cơ bản, tương tự như <div> trong web
-    <View style={styles.container}>
-      {/* Text là component để hiển thị văn bản */}
-      <Text>4</Text>
+interface Props {
+  fullName: string;
+  day: number;
+  month: number;
+  year: number;
+}
 
-      {/* StatusBar cho phép bạn tùy chỉnh thanh trạng thái của thiết bị */}
-      <StatusBar style="auto" />
+const layout = [
+  [3, 6, 9],
+  [2, 5, 8],
+  [1, 4, 7],
+];
+
+
+export default function CombinedChartScreen({ fullName, day, month, year }: Props) {
+  const [combinedMap, setCombinedMap] = useState<{ [key: number]: string }>({});
+
+  useEffect(() => {
+    const map = calculateCombinedMap(fullName, day, month, year);
+    setCombinedMap(map);
+    console.log('Combined Map:', map);
+  }, [fullName, day, month, year]);
+
+
+  function getPresentNumbers(map: { [key: number]: string }) {
+    return Object.keys(map)
+      .filter(key => map[Number(key)] !== '')
+      .map(Number);
+  }
+  
+  useEffect(() => {
+    const present = getPresentNumbers(combinedMap);
+    console.log('Các số xuất hiện:', present);
+  }, [combinedMap]);
+  
+
+  
+  const renderCell = (num: number) => (
+    <View key={num} style={styles.cell}>
+      <Text style={styles.cellText}>{combinedMap[num]}</Text>
     </View>
+  );
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>BIỂU ĐỒ TỔNG HỢP</Text>
+      <Text style={styles.subTitle}>Họ tên: {fullName}</Text>
+      <Text style={styles.subTitle}>Ngày sinh: {day}/{month}/{year}</Text>
+
+      <View style={styles.chart}>
+        {layout.map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.row}>
+            {row.map(renderCell)}
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
-// StyleSheet.create được dùng để tạo các đối tượng kiểu dáng (style)
-// Giúp tối ưu hóa và tổ chức code CSS-in-JS
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // Chiếm toàn bộ không gian màn hình có sẵn
-    backgroundColor: '#fff', // Màu nền trắng
-    alignItems: 'center', // Căn chỉnh các phần tử con theo chiều ngang (ở giữa)
-    justifyContent: 'center', // Căn chỉnh các phần tử con theo chiều dọc (ở giữa)
+    padding: 20,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subTitle: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  chart: {
+    marginTop: 20,
+  },
+  row: {
+    flexDirection: 'row',
+  },
+  cell: {
+    width: 70,
+    height: 70,
+    borderWidth: 1,
+    borderColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 3,
+  },
+  cellText: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
