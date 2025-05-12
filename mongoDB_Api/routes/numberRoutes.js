@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { connectMongoDB, pool } = require('../config/db');
-const AdvantageArrow = require('../models/advantageArrow');
 const Chart = require('../models/_chart');
-const DefectArrow = require('../models/defectArrow');
+const Arrow = require('../models/Arrows');
 const HighPeaks = require('../models/highPeaks');
 const MainNumber = require('../models/mainNumber');
 const PersonalYear = require('../models/personalYear');
@@ -70,33 +69,60 @@ router.get('/mongo/chart/search', async (req, res) => {
   }
 });
 
-router.get('/mongo/defectArrow/search', async (req, res) => {
-  const { arrow } = req.query;
-  if (!arrow) {
-    return res.status(400).json({ error: 'Missing search parameter: arrow' });
-  }
-  try {
-    await connectMongoDB();
-    const results = await DefectArrow.find({ arrow: arrow }); // Assuming 'arrow' is a field in your DefectArrow model
-    res.json(results);
-  } catch (error) {
-    console.error('Error searching defect arrows:', error);
-    res.status(500).json({ error: 'Failed to search defect arrows' });
-  }
-});
+// router.get('/mongo/defectArrow/search', async (req, res) => {
+//   const { arrow } = req.query;
+//   if (!arrow) {
+//     return res.status(400).json({ error: 'Missing search parameter: arrow' });
+//   }
+//   try {
+//     await connectMongoDB();
+//     const results = await DefectArrow.find({ arrow: arrow }); // Assuming 'arrow' is a field in your DefectArrow model
+//     res.json(results);
+//   } catch (error) {
+//     console.error('Error searching defect arrows:', error);
+//     res.status(500).json({ error: 'Failed to search defect arrows' });
+//   }
+// });
 
-router.get('/mongo/advantageArrow/search', async (req, res) => {
-  const { arrow } = req.query;
-  if (!arrow) {
-    return res.status(400).json({ error: 'Missing search parameter: arrow' });
-  }
+// router.get('/mongo/advantageArrow/search', async (req, res) => {
+//   const { arrow } = req.query;
+//   if (!arrow) {
+//     return res.status(400).json({ error: 'Missing search parameter: arrow' });
+//   }
+//   try {
+//     await connectMongoDB();
+//     const results = await AdvantageArrow.find({ arrow: arrow }); // Assuming 'arrow' is a field in your AdvantageArrow model
+//     res.json(results);
+//   } catch (error) {
+//     console.error('Error searching advantage arrows:', error);
+//     res.status(500).json({ error: 'Failed to search advantage arrows' });
+//   }
+// });
+
+// Route API: Lấy tất cả advantageArrow
+router.get('/mongo/api/arrows', async (req, res) => {
   try {
-    await connectMongoDB();
-    const results = await AdvantageArrow.find({ arrow: arrow }); // Assuming 'arrow' is a field in your AdvantageArrow model
-    res.json(results);
-  } catch (error) {
-    console.error('Error searching advantage arrows:', error);
-    res.status(500).json({ error: 'Failed to search advantage arrows' });
+    const [advantageData, defectData] = await Promise.all([
+      advantageArrow.find({}),
+      defectArrow.find({})
+    ]);
+
+    //Tạo object map để tra nhanh
+    const defectMap = {};
+    defectData.forEach(item => {
+      defectMap[item.arrow] = item.defect;
+    });
+
+    //Gộp 2 dữ liệu lại với nhau
+    const combinedData = advantageData.map(item => ({
+      arrow: item.arrow,
+      advantage: item.advantage,
+      defect: defectMap[item.arrow] || null
+    }));
+
+    res.json(combinedData);
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi truy vấn dữ liệu' });
   }
 });
 
