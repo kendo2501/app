@@ -11,16 +11,15 @@ import {
     Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
 import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Đảm bảo đường dẫn đúng
 
 // --- Cấu hình ---
 const USER_ID_TO_FETCH = 1;
-const BACKGROUND_IMAGE = require('../assets/images/background.jpg');
+const BACKGROUND_IMAGE = require('../../assets/images/background.jpg');
 
 // --- Helper Functions ---
 
-// Tính tổng các chữ số (Dùng cho H1, H3 và rút gọn H8)
+// Tính tổng các chữ số (Dùng cho H1 và rút gọn H6)
 const sumDigits = (num: number): number => {
     try {
         if (num < 0) return 0;
@@ -30,7 +29,7 @@ const sumDigits = (num: number): number => {
                 const digitNum = parseInt(digit, 10);
                 return s + (isNaN(digitNum) ? 0 : digitNum);
             }, 0);
-    } catch (e) { console.error(`[sumDigits H8] Error:`, e); return 0; }
+    } catch (e) { console.error(`[sumDigits H6] Error:`, e); return 0; }
 };
 
 // H1 Ban đầu (Mới - dựa trên dd)
@@ -45,35 +44,27 @@ const calculateH2InitialValue = (monthInput: number | string | null | undefined)
     if (monthInput === null || monthInput === undefined || monthInput === '') return null;
     const monthValue = Number(monthInput);
     if (!isNaN(monthValue) && Number.isInteger(monthValue) && monthValue >= 1 && monthValue <= 12) return monthValue;
-    console.warn(`[calculateH2InitialValue H8] Invalid month input: ${monthInput}`);
+    console.warn(`[calculateH2InitialValue H6] Invalid month input: ${monthInput}`);
     return null;
 };
 
-// H3 Ban đầu (Cũ - dựa trên Vishal)
-const calculateH3InitialValue = (year: number | null | undefined): number | null => {
-     if (year === null || year === undefined || typeof year !== 'number' || year <= 0) return null;
-    try { return sumDigits(year); } catch (e) { return null; }
-};
-
-// H8 Final (<=22)
-const getFinalH8Value = (day: number | string | null | undefined, month: number | string | null | undefined, year: number | string | null | undefined): number | null => {
+// H6 Final (<=22)
+const getFinalH6Value = (day: number | string | null | undefined, month: number | string | null | undefined): number | null => {
     const resultH1 = calculateH1InitialValue(typeof day === 'string' ? Number(day) : day); // H1 ban đầu
     const resultH2 = calculateH2InitialValue(month); // Sử dụng H2 đã sửa
-    const resultH3 = calculateH3InitialValue(typeof year === 'string' ? Number(year) : year); // H3 ban đầu
 
-    if (resultH1 === null || resultH2 === null || resultH3 === null) {
-        console.error(`[getFinalH8Value H8] Failed due to null intermediate: H1=${resultH1}, H2=${resultH2}, H3=${resultH3}`);
-        return null;
+    if (resultH1 === null || resultH2 === null) {
+         console.error(`[getFinalH6Value H6] Failed due to null intermediate: H1=${resultH1}, H2=${resultH2}`);
+         return null;
     }
-    let finalH8 = resultH1 + resultH2 + resultH3;
-    console.log(`[getFinalH8Value H8] Initial sum (H1i+H2i+H3i): ${finalH8}`);
-
-    while (finalH8 > 22) {
-         console.log(`[getFinalH8Value H8] Reducing H8 sum ${finalH8} (> 22)...`);
-         finalH8 = sumDigits(finalH8);
+    let finalH6 = resultH1 + resultH2;
+     console.log(`[getFinalH6Value H6] Initial sum (H1i+H2i): ${finalH6}`);
+    while (finalH6 > 22) {
+         console.log(`[getFinalH6Value H6] Reducing H6 sum ${finalH6} (> 22)...`);
+         finalH6 = sumDigits(finalH6);
     }
-    console.log(`[getFinalH8Value H8] final H8: ${finalH8}`);
-    return finalH8;
+    console.log(`[getFinalH6Value H6] final H6: ${finalH6}`);
+    return finalH6;
 };
 // --------------------
 
@@ -97,9 +88,9 @@ const styles = StyleSheet.create({
 });
 // --- End of Styles ---
 
-// --- Component H8 ---
-export default function H8Screen() {
-    const [h8Number, setH8Number] = useState<number | null>(null);
+// --- Component H6 ---
+export default function H6Screen() {
+    const [h6Number, setH6Number] = useState<number | null>(null);
     const [userData, setUserData] = useState<any>(null);
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -108,40 +99,39 @@ export default function H8Screen() {
     useEffect(() => {
         const loadData = async () => {
              setLoading(true); setError(null); setUserData(null);
-             setH8Number(null); setMandalaDescription(null);
+             setH6Number(null); setMandalaDescription(null);
              try {
                 const fetchedUserData = await getUserById(USER_ID_TO_FETCH);
                 setUserData(fetchedUserData);
                 const dayValue = fetchedUserData?.dd;
                 const monthValue = fetchedUserData?.mm; // Input tháng (có thể là string "0X")
-                const yearValue = fetchedUserData?.yyyy;
 
-                console.log(`[H8] Inputs: dd=${dayValue}, mm=${monthValue}, Vishal=${yearValue}`);
+                console.log(`[H6] Inputs: dd=${dayValue}, mm=${monthValue}`);
 
-                const finalH8 = getFinalH8Value(dayValue, monthValue, yearValue); // Tính H8 cuối cùng
-                setH8Number(finalH8);
-                // Log giá trị cuối đã có trong getFinalH8Value
+                const finalH6 = getFinalH6Value(dayValue, monthValue); // Tính H6 cuối cùng
+                setH6Number(finalH6);
+                // Log giá trị cuối đã có trong getFinalH6Value
 
-                 if (finalH8 !== null) {
-                    const description = await searchMandalaInfoByNumber(finalH8);
+                 if (finalH6 !== null) {
+                    const description = await searchMandalaInfoByNumber(finalH6);
                     if (typeof description === 'string' && description.trim().length > 0) {
                         setMandalaDescription(description);
                     } else {
-                        setMandalaDescription(`Không tìm thấy mô tả cho số H8: ${finalH8}.`);
-                        console.warn(`[H8] No valid description found for H8=${finalH8}. API returned:`, description);
+                        setMandalaDescription(`Không tìm thấy mô tả cho số H6: ${finalH6}.`);
+                        console.warn(`[H6] No valid description found for H6=${finalH6}. API returned:`, description);
                     }
                  } else {
-                     setError("Lỗi tính toán H8 do dữ liệu ngày/tháng/năm không hợp lệ.");
-                     setMandalaDescription("Lỗi tính toán H8.");
+                     setError("Lỗi tính toán H6 do dữ liệu ngày/tháng không hợp lệ.");
+                     setMandalaDescription("Lỗi tính toán H6.");
                  }
              } catch (err: any) {
-                 console.error("[H8] Error loading data:", err);
+                 console.error("[H6] Error loading data:", err);
                  const errorMessage = err?.message || "Đã xảy ra lỗi không xác định.";
                  setError(errorMessage);
                  setMandalaDescription("Lỗi khi tải dữ liệu.");
-                 Alert.alert("Lỗi H8", errorMessage);
+                 Alert.alert("Lỗi H6", errorMessage);
              }
-             finally { setLoading(false); console.log("[H8] Loading finished."); }
+             finally { setLoading(false); console.log("[H6] Loading finished."); }
         };
         loadData();
     }, []);
@@ -158,12 +148,12 @@ export default function H8Screen() {
                   <StatusBar barStyle="light-content" />
                   <View style={styles.header}>
                       <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={28} color="white" /></TouchableOpacity>
-                      <View style={styles.titleContainer}><Text style={styles.title}>H8</Text></View>
+                      <View style={styles.titleContainer}><Text style={styles.title}>H6</Text></View>
                       <View style={styles.backButtonPlaceholder} />
                   </View>
                   <View style={styles.content}>
                       <View style={styles.circle}>
-                          {(loading && h8Number === null) ? (<ActivityIndicator size="small" color="#E6007E" />) : h8Number !== null ? (<Text style={styles.number}>{h8Number}</Text>) : (<Text style={styles.number}>-</Text>)}
+                          {(loading && h6Number === null) ? (<ActivityIndicator size="small" color="#E6007E" />) : h6Number !== null ? (<Text style={styles.number}>{h6Number}</Text>) : (<Text style={styles.number}>-</Text>)}
                       </View>
                       <View style={styles.textBox}>
                            <Text style={styles.descriptionText}>{loading ? "Đang tải mô tả..." : mandalaDescription ? mandalaDescription : error ? error : "Không có mô tả."}</Text>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -8,20 +8,20 @@ const LoginScreen = () => {
   const [user, setUser] = useState<string>('');
   const [pass, setPass] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [toastMessage, setToastMessage] = useState<string>(''); // ✅ toast message
-  const [toastType, setToastType] = useState<'success' | 'error'>('success'); // Để xác định kiểu thông báo
+  const [toastMessage, setToastMessage] = useState<string>('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   const handleLogin = async () => {
     if (!user || !pass) {
       setToastMessage('Vui lòng điền đầy đủ thông tin!');
-      setToastType('error'); // Đặt màu đỏ cho thông báo lỗi
+      setToastType('error');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch('http://192.168.1.34:3001/api/login', {
+      const response = await fetch('http://192.168.10.7:3001/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,24 +33,34 @@ const LoginScreen = () => {
       console.log('Phản hồi server:', result);
 
       if (result.success) {
-        await AsyncStorage.setItem('authToken', result.token);
-        await AsyncStorage.setItem('userInfo', JSON.stringify(result.data));
+  if (result.token !== undefined && result.token !== null) {
+    await AsyncStorage.setItem('authToken', result.token);
+  } else {
+    await AsyncStorage.removeItem('authToken'); // hoặc bỏ dòng này nếu không cần xóa
+    console.warn('Không có token để lưu.');
+  }
+
+  if (result.data) {
+    await AsyncStorage.setItem('userInfo', JSON.stringify(result.data));
+  }
+
+  await AsyncStorage.setItem('isLoggedIn', 'true');
 
         setToastMessage('Đăng nhập thành công!');
-        setToastType('success'); // Đặt màu xanh cho thông báo thành công
+        setToastType('success');
 
         setTimeout(() => {
           setToastMessage('');
-          router.push('/explore');
+          router.replace('/'); // ✅ Về TabLayout
         }, 1500);
       } else {
         setToastMessage(result.message || 'Sai tên đăng nhập hoặc mật khẩu');
-        setToastType('error'); // Đặt màu đỏ cho thông báo lỗi
+        setToastType('error');
       }
     } catch (error) {
       console.error('Lỗi đăng nhập:', error);
       setToastMessage('Không thể kết nối đến server!');
-      setToastType('error'); // Đặt màu đỏ cho thông báo lỗi
+      setToastType('error');
     } finally {
       setLoading(false);
     }
@@ -65,6 +75,7 @@ const LoginScreen = () => {
         placeholder="Tên người dùng"
         value={user}
         onChangeText={setUser}
+        autoCapitalize="none"
       />
 
       <TextInput
@@ -76,16 +87,23 @@ const LoginScreen = () => {
       />
 
       {toastMessage !== '' && (
-        <Text style={[styles.toast, toastType === 'success' ? styles.toastSuccess : styles.toastError]}>
+        <Text
+          style={[
+            styles.toast,
+            toastType === 'success' ? styles.toastSuccess : styles.toastError,
+          ]}
+        >
           {toastMessage}
         </Text>
       )}
 
-      <Button
-        title={loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-        onPress={handleLogin}
-        disabled={loading}
-      />
+      <View style={styles.buttonWrapper}>
+        {loading ? (
+          <ActivityIndicator size="small" color="#007bff" />
+        ) : (
+          <Button title="Đăng nhập" onPress={handleLogin} />
+        )}
+      </View>
 
       <TouchableOpacity onPress={() => router.push('/register')} style={styles.registerLink}>
         <Text style={styles.registerText}>Chưa có tài khoản? Đăng ký ngay</Text>
@@ -108,12 +126,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   input: {
-    height: 40,
+    height: 44,
     borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 4,
+    borderRadius: 6,
     marginBottom: 12,
-    paddingLeft: 8,
+    paddingHorizontal: 10,
+    fontSize: 16,
   },
   toast: {
     textAlign: 'center',
@@ -123,11 +142,14 @@ const styles = StyleSheet.create({
   },
   toastSuccess: {
     color: 'green',
-    backgroundColor: 'rgba(0, 255, 0, 0.1)', // Thêm nền cho toast thành công
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
   },
   toastError: {
     color: 'red',
-    backgroundColor: 'rgba(255, 0, 0, 0.1)', // Thêm nền cho toast lỗi
+    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+  },
+  buttonWrapper: {
+    marginVertical: 10,
   },
   registerLink: {
     marginTop: 20,

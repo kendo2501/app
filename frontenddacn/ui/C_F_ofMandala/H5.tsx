@@ -16,11 +16,11 @@ import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Đảm bả
 
 // --- Cấu hình ---
 const USER_ID_TO_FETCH = 1;
-const BACKGROUND_IMAGE = require('../assets/images/background.jpg');
+const BACKGROUND_IMAGE = require('../../assets/images/background.jpg');
 
 // --- Helper Functions ---
 
-// Tính tổng các chữ số (Cần cho rút gọn H4)
+// Tính tổng các chữ số (Dùng cho H1, H3, H4, H5)
 const sumDigits = (num: number): number => {
     try {
         if (num < 0) return 0;
@@ -30,42 +30,64 @@ const sumDigits = (num: number): number => {
                 const digitNum = parseInt(digit, 10);
                 return s + (isNaN(digitNum) ? 0 : digitNum);
             }, 0);
-    } catch (e) { console.error(`[sumDigits H4] Error:`, e); return 0; }
+    } catch (e) { console.error(`[sumDigits H5] Error:`, e); return 0; }
 };
 
-// H2 Ban đầu (Cần để lấy số tháng hợp lệ cho H4)
+// H1 Ban đầu (Mới - dựa trên dd)
+const calculateH1InitialValue = (day: number | null | undefined): number | null => {
+    if (day === null || day === undefined || typeof day !== 'number' || day <= 0) return null;
+    if (day <= 22) return day;
+    return sumDigits(day);
+};
+
+// H2 Ban đầu (Tháng hợp lệ - ĐÃ SỬA ĐỂ NHẬN CẢ STRING "0X")
 const calculateH2InitialValue = (monthInput: number | string | null | undefined): number | null => {
     if (monthInput === null || monthInput === undefined || monthInput === '') return null;
     const monthValue = Number(monthInput);
     if (!isNaN(monthValue) && Number.isInteger(monthValue) && monthValue >= 1 && monthValue <= 12) return monthValue;
-    console.warn(`[calculateH2InitialValue H4] Invalid month input: ${monthInput}`);
+    console.warn(`[calculateH2InitialValue H5] Invalid month input: ${monthInput}`);
     return null;
+};
+
+// H3 Ban đầu (Cũ - dựa trên Vishal)
+const calculateH3InitialValue = (year: number | null | undefined): number | null => {
+    if (year === null || year === undefined || typeof year !== 'number' || year <= 0) return null;
+    try { return sumDigits(year); } catch (e) { return null; }
 };
 
 // H4 Final (<=22 - Life Path)
 const getFinalH4Value = (day: number | string | null | undefined, month: number | string | null | undefined, year: number | string | null | undefined): number | null => {
-    // Chuyển đổi và kiểm tra đầu vào
     const dayNum = (typeof day === 'string') ? Number(day) : day;
-    const monthNum = calculateH2InitialValue(month); // Lấy số tháng hợp lệ
+    const monthNum = calculateH2InitialValue(month); // Sử dụng H2 đã sửa
     const yearNum = (typeof year === 'string') ? Number(year) : year;
-
-     if (dayNum === null || monthNum === null || yearNum === null || isNaN(dayNum) || isNaN(yearNum) || dayNum <=0 || yearNum <=0 ) {
-         console.warn(`[getFinalH4Value H4] Invalid inputs: d=${day}(${dayNum}), m=${month}(${monthNum}), y=${year}(${yearNum})`);
-         return null;
-     }
-
+     if (dayNum === null || monthNum === null || yearNum === null || isNaN(dayNum) || isNaN(yearNum) || dayNum <=0 || yearNum <=0 ) return null;
     try {
         let currentSum = dayNum + monthNum + yearNum;
-        // Rút gọn tổng nếu lớn hơn 22
-        while (currentSum > 22) {
-            currentSum = sumDigits(currentSum);
-        }
-        console.log(`[getFinalH4Value H4] final H4: ${currentSum}`);
-        return currentSum; // Kết quả đã rút gọn <= 22
-    } catch (e) {
-        console.error("[getFinalH4Value H4] Error during calculation:", e);
-        return null;
-    }
+        while (currentSum > 22) { currentSum = sumDigits(currentSum); }
+        // console.log(`[getFinalH4Value H5] final H4: ${currentSum}`);
+        return currentSum;
+    } catch (e) { return null; }
+};
+
+// H5 Final (<=22)
+const getFinalH5Value = (day: number | string | null | undefined, month: number | string | null | undefined, year: number | string | null | undefined): number | null => {
+     const resultH1 = calculateH1InitialValue(typeof day === 'string' ? Number(day) : day); // H1 ban đầu
+     const resultH2 = calculateH2InitialValue(month); // Sử dụng H2 đã sửa
+     const resultH3 = calculateH3InitialValue(typeof year === 'string' ? Number(year) : year); // H3 ban đầu
+     const finalH4 = getFinalH4Value(day, month, year); // H4 cuối
+
+     if (resultH1 === null || resultH2 === null || resultH3 === null || finalH4 === null) {
+         console.error(`[getFinalH5Value H5] Failed due to null intermediate: H1=${resultH1}, H2=${resultH2}, H3=${resultH3}, H4=${finalH4}`);
+         return null;
+     }
+     let finalH5 = resultH1 + resultH2 + resultH3 + finalH4;
+     console.log(`[getFinalH5Value H5] Initial sum (H1i+H2i+H3i+H4f): ${finalH5}`);
+     while (finalH5 > 22) {
+         console.log(`[getFinalH5Value H5] Reducing H5 sum ${finalH5} (> 22)...`);
+         finalH5 = sumDigits(finalH5);
+     }
+     console.log(`[getFinalH5Value H5] final H5: ${finalH5}`);
+     return finalH5;
 };
 // --------------------
 
@@ -89,9 +111,9 @@ const styles = StyleSheet.create({
 });
 // --- End of Styles ---
 
-// --- Component H4 ---
-export default function H4Screen() {
-    const [h4Number, setH4Number] = useState<number | null>(null);
+// --- Component H5 ---
+export default function H5Screen() {
+    const [h5Number, setH5Number] = useState<number | null>(null);
     const [userData, setUserData] = useState<any>(null);
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -100,7 +122,7 @@ export default function H4Screen() {
     useEffect(() => {
         const loadData = async () => {
              setLoading(true); setError(null); setUserData(null);
-             setH4Number(null); setMandalaDescription(null);
+             setH5Number(null); setMandalaDescription(null);
              try {
                 const fetchedUserData = await getUserById(USER_ID_TO_FETCH);
                 setUserData(fetchedUserData);
@@ -108,37 +130,37 @@ export default function H4Screen() {
                 const monthValue = fetchedUserData?.mm; // Input tháng (có thể là string "0X")
                 const yearValue = fetchedUserData?.yyyy;
 
-                console.log(`[H4] Inputs: dd=${dayValue}, mm=${monthValue}, yyyy=${yearValue}`);
+                console.log(`[H5] Inputs: dd=${dayValue}, mm=${monthValue}, Vishal=${yearValue}`);
 
-                const finalH4 = getFinalH4Value(dayValue, monthValue, yearValue); // Tính H4 cuối cùng
-                setH4Number(finalH4);
-                // Log giá trị cuối đã có trong getFinalH4Value
+                const finalH5 = getFinalH5Value(dayValue, monthValue, yearValue); // Tính H5 cuối cùng
+                setH5Number(finalH5);
+                // Log giá trị cuối đã có trong getFinalH5Value
 
-                 if (finalH4 !== null) {
-                    const description = await searchMandalaInfoByNumber(finalH4);
+                 if (finalH5 !== null) {
+                    const description = await searchMandalaInfoByNumber(finalH5);
                     if (typeof description === 'string' && description.trim().length > 0) {
                         setMandalaDescription(description);
                     } else {
-                        setMandalaDescription(`Không tìm thấy mô tả cho số H4: ${finalH4}.`);
-                        console.warn(`[H4] No valid description found for H4=${finalH4}. API returned:`, description);
+                        setMandalaDescription(`Không tìm thấy mô tả cho số H5: ${finalH5}.`);
+                         console.warn(`[H5] No valid description found for H5=${finalH5}. API returned:`, description);
                     }
                  } else {
-                     setError("Lỗi tính toán H4 do dữ liệu ngày/tháng/năm không hợp lệ.");
-                     setMandalaDescription("Lỗi tính toán H4.");
+                     setError("Lỗi tính toán H5 do dữ liệu ngày/tháng/năm không hợp lệ.");
+                     setMandalaDescription("Lỗi tính toán H5.");
                  }
              } catch (err: any) {
-                 console.error("[H4] Error loading data:", err);
+                 console.error("[H5] Error loading data:", err);
                  const errorMessage = err?.message || "Đã xảy ra lỗi không xác định.";
                  setError(errorMessage);
                  setMandalaDescription("Lỗi khi tải dữ liệu.");
-                 Alert.alert("Lỗi H4", errorMessage);
+                 Alert.alert("Lỗi H5", errorMessage);
              }
-             finally { setLoading(false); console.log("[H4] Loading finished."); }
+             finally { setLoading(false); console.log("[H5] Loading finished.");}
         };
         loadData();
     }, []);
 
-     const handleGoBack = () => { console.log('Go back pressed'); };
+      const handleGoBack = () => { console.log('Go back pressed'); };
 
      // --- Render Logic ---
       if (loading && !userData) {
@@ -151,15 +173,15 @@ export default function H4Screen() {
                   <StatusBar barStyle="light-content" />
                   <View style={styles.header}>
                       <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={28} color="white" /></TouchableOpacity>
-                      <View style={styles.titleContainer}><Text style={styles.title}>H4</Text></View>
+                      <View style={styles.titleContainer}><Text style={styles.title}>H5</Text></View>
                       <View style={styles.backButtonPlaceholder} />
                   </View>
                   <View style={styles.content}>
                       <View style={styles.circle}>
-                          {(loading && h4Number === null) ? (<ActivityIndicator size="small" color="#E6007E" />) : h4Number !== null ? (<Text style={styles.number}>{h4Number}</Text>) : (<Text style={styles.number}>-</Text>)}
+                          {(loading && h5Number === null) ? (<ActivityIndicator size="small" color="#E6007E" />) : h5Number !== null ? (<Text style={styles.number}>{h5Number}</Text>) : (<Text style={styles.number}>-</Text>)}
                       </View>
                       <View style={styles.textBox}>
-                          <Text style={styles.descriptionText}>{loading ? "Đang tải mô tả..." : mandalaDescription ? mandalaDescription : error ? error : "Không có mô tả."}</Text>
+                           <Text style={styles.descriptionText}>{loading ? "Đang tải mô tả..." : mandalaDescription ? mandalaDescription : error ? error : "Không có mô tả."}</Text>
                       </View>
                   </View>
               </SafeAreaView>

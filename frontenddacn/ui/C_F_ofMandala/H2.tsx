@@ -16,7 +16,7 @@ import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Đảm bả
 
 // --- Cấu hình ---
 const USER_ID_TO_FETCH = 1;
-const BACKGROUND_IMAGE = require('../assets/images/background.jpg');
+const BACKGROUND_IMAGE = require('../../assets/images/background.jpg');
 
 // --- Helper Functions ---
 // H2 Ban đầu (Tháng hợp lệ - ĐÃ SỬA ĐỂ NHẬN CẢ STRING "0X")

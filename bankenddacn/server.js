@@ -15,8 +15,8 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.use('/api', authRoutes);
-app.use('/api', lifePathRoutes); // ✅ thêm dòng này
+
 
 app.listen(port, () => {
-  console.log(`Server đang chạy tại http://192.168.2.148:${port}`);
+  console.log(`Server đang chạy tại http://localhost:${port}`);
 });

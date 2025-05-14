@@ -14,14 +14,14 @@ import {
 // --- !! Bạn cần tạo các file này và export component từ chúng !! ---
 // --- !! Uncomment và sửa đường dẫn/tên file nếu cần !! ---
 
-import H1 from '../function/C_F_ofMandala/H1';
-import H2 from '../function/C_F_ofMandala/H2';
-import H3 from '../function/C_F_ofMandala/H3';
-import H4 from '../function/C_F_ofMandala/H4';
-import H5 from '../function/C_F_ofMandala/H5';
-import H6 from '../function/C_F_ofMandala/H6';
-import H7 from '../function/C_F_ofMandala/H7';
-import H8 from '../function/C_F_ofMandala/H8';
+import H1 from '../ui/C_F_ofMandala/H1';
+import H2 from '../ui/C_F_ofMandala/H2';
+import H3 from '../ui/C_F_ofMandala/H3';
+import H4 from '../ui/C_F_ofMandala/H4';
+import H5 from '../ui/C_F_ofMandala/H5';
+import H6 from '../ui/C_F_ofMandala/H6';
+import H7 from '../ui/C_F_ofMandala/H7';
+import H8 from '../ui/C_F_ofMandala/H8';
 // import H9 from '../../mandala/H9';
 // import H10 from '../../mandala/H10';
 // import H11 from '../../mandala/H11';
@@ -140,7 +140,7 @@ const MandalaScreen: React.FC = () => {
     // --- Phần return chính ---
     return (
         <ImageBackground
-            source={require('../../assets/images/background.jpg')} // !!! Nhớ thay đổi đường dẫn này
+            source={require('../assets/images/background.jpg')} // !!! Nhớ thay đổi đường dẫn này
             style={styles.background}
             resizeMode="cover"
         >

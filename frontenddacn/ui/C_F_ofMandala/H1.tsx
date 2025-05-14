@@ -18,7 +18,7 @@ import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Đảm bả
 
 // --- Cấu hình ---
 const USER_ID_TO_FETCH = 1; // ID của user bạn muốn lấy dữ liệu
-const BACKGROUND_IMAGE = require('../assets/images/background.jpg'); // Đường dẫn tới ảnh nền
+const BACKGROUND_IMAGE = require('../../assets/images/background.jpg'); // Đường dẫn tới ảnh nền
 
 // Hàm tính toán con số chủ đạo
 const calculateDayNumber = (day: number | null | undefined): number | null => {
