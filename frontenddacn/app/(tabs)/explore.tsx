@@ -102,7 +102,7 @@ export default function InfoFormScreen() {
     setIsSubmitting(true);
     try {
       await saveUserData({ fullName, day, month, year });
-      router.push('index.tsx'); // Điều hướng sau khi lưu thành công
+      router.push('/'); // Điều hướng sau khi lưu thành công
     } catch (error) {
       Alert.alert('Lỗi', 'Không thể lưu dữ liệu. Vui lòng thử lại.');
       console.error('Submit error:', error);
