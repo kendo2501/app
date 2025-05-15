@@ -9,6 +9,7 @@ import {
   ImageBackground,
   ActivityIndicator,
   Button,
+  Platform,
 } from 'react-native';
 
 // --- IMPORT MÀN HÌNH ---
@@ -82,16 +83,17 @@ export default function App() {
   );
 }
 
+// --- HOME SCREEN ---
 function HomeScreen({ navigateTo }: { navigateTo: (screen: ActiveScreen) => void }) {
   const buttons = [
     { title: 'SỐ CHỦ ĐẠO', screen: 'mainNumber' },
-    { title: 'BIỂU ĐỒ NGÀY SINH', screen: 'birthChart' },
+    { title: 'BIỂU ĐỒ NGÀY SINH', screen: 'birthChart' },
     { title: 'BIỂU ĐỒ TÊN', screen: 'nameChart' },
-    { title: 'BIỂU ĐỒ TỔNG HỢP', screen: 'summaryChart' },
+    { title: 'BIỂU ĐỒ TỔNG HỢP', screen: 'summaryChart' },
     { title: 'MŨI TÊN XU HƯỚNG', screen: 'trendArrow' },
     { title: 'CÁC ĐỈNH KIM TỰ', screen: 'pyramidNail' },
     { title: 'PERSONAL YEAR', screen: 'personalYear' },
-    { title: 'MANDALA', screen: 'mandala' },
+{ title: 'MANDALA', screen: 'mandala' },
   ];
 
   return (
@@ -102,49 +104,49 @@ function HomeScreen({ navigateTo }: { navigateTo: (screen: ActiveScreen) => void
     >
       <View style={styles.wrapper}>
         <View style={styles.gridContainer}>
-  <View style={styles.row}>
-    {buttons.slice(0, 3).map((btn, idx) => (
-      <TouchableOpacity
-        key={idx}
-        style={styles.button}
-        onPress={() => navigateTo(btn.screen as ActiveScreen)}
-      >
-        <Text style={styles.buttonText}>{btn.title}</Text>
-      </TouchableOpacity>
-    ))}
-  </View>
+          <View style={styles.row}>
+            {buttons.slice(0, 3).map((btn, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={styles.button}
+                onPress={() => navigateTo(btn.screen as ActiveScreen)}
+              >
+                <Text style={styles.buttonText}>{btn.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-  <View style={styles.row}>
-    {buttons.slice(3, 6).map((btn, idx) => (
-      <TouchableOpacity
-        key={idx + 3}
-        style={styles.button}
-        onPress={() => navigateTo(btn.screen as ActiveScreen)}
-      >
-        <Text style={styles.buttonText}>{btn.title}</Text>
-      </TouchableOpacity>
-    ))}
-  </View>
+          <View style={styles.row}>
+            {buttons.slice(3, 6).map((btn, idx) => (
+              <TouchableOpacity
+                key={idx + 3}
+                style={styles.button}
+                onPress={() => navigateTo(btn.screen as ActiveScreen)}
+              >
+                <Text style={styles.buttonText}>{btn.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-  <View style={[styles.row, { justifyContent: 'center' }]}>
-    {buttons.slice(6, 8).map((btn, idx) => (
-      <TouchableOpacity
-        key={idx + 6}
-        style={styles.button}
-        onPress={() => navigateTo(btn.screen as ActiveScreen)}
-      >
-        <Text style={styles.buttonText}>{btn.title}</Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-</View>
-
+          <View style={[styles.row, { justifyContent: 'center' }]}>
+            {buttons.slice(6, 8).map((btn, idx) => (
+              <TouchableOpacity
+                key={idx + 6}
+                style={styles.button}
+                onPress={() => navigateTo(btn.screen as ActiveScreen)}
+              >
+                <Text style={styles.buttonText}>{btn.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       </View>
     </ImageBackground>
   );
 }
 
-
+// --- STYLES ---
+// --- STYLES ---
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -155,40 +157,49 @@ const styles = StyleSheet.create({
   },
   background: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   wrapper: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 24,
   },
   gridContainer: {
-    width: '90%',
+    width: '100%',
+    maxWidth: 400,
+    gap: 12,
+  },
+  row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'center',
-    columnGap: 20,
-    rowGap: 20,
+    flexWrap: 'wrap',
+    gap: 12,
   },
   button: {
-  backgroundColor: '#FFF',
-  paddingVertical: 15,
-  paddingHorizontal: 20,
-  borderRadius: 12,
-  marginHorizontal: 8, // <-- khoảng cách giữa các nút
-  width: 80,
-  height: 80,
-  justifyContent: 'center',
-  alignItems: 'center',
-  elevation: 3,
-},
-
+    backgroundColor: '#FFF',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    width: 100,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
   buttonText: {
     fontWeight: 'bold',
     color: '#000',
     textAlign: 'center',
-    fontSize: 7,
+    fontSize: 10,
   },
-   loadingContainer: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -207,12 +218,4 @@ const styles = StyleSheet.create({
     color: '#bdc3c7',
     textAlign: 'center',
     marginBottom: 20,
-  },
-  row: {
-  flexDirection: 'row',
-  justifyContent: 'center',
-  marginBottom: 12,
-  flexWrap: 'nowrap',
-  },
-
-});
+  },});
