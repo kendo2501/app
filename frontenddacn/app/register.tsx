@@ -5,7 +5,11 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  ImageBackground,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 
 const RegisterScreen = () => {
@@ -17,12 +21,26 @@ const RegisterScreen = () => {
   const [dd, setDd] = useState('');
   const [mm, setMm] = useState('');
   const [yyyy, setYyyy] = useState('');
-  const [toastMessage, setToastMessage] = useState<string>('');
-  const [toastType, setToastType] = useState<'success' | 'error'>('success'); // Kiểu thông báo
+  const [loading, setLoading] = useState(false);
+
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage(message);
+    setToastType(type);
+    setTimeout(() => setToastMessage(''), 3000); // ẩn sau 3 giây
+  };
 
   const isValidDate = (day: string, month: string, year: string) => {
-    const d = parseInt(day, 10), m = parseInt(month, 10), y = parseInt(year, 10);
+    const d = parseInt(day, 10),
+      m = parseInt(month, 10),
+      y = parseInt(year, 10);
+
     if (isNaN(d) || isNaN(m) || isNaN(y)) return false;
+
+    if (y < 1900 || y > new Date().getFullYear()) return false;
+
     const date = new Date(`${y}-${m}-${d}`);
     return (
       date.getFullYear() === y &&
@@ -32,36 +50,39 @@ const RegisterScreen = () => {
   };
 
   const handleRegister = async () => {
-    setToastMessage('➡ Đang xử lý đăng ký...');
+    if (loading) return;
+
+    showToast('➡ Đang xử lý đăng ký...');
+    setLoading(true);
 
     if (!user || !pass || !fullName || !dd || !mm || !yyyy) {
-      setToastMessage('❌ Vui lòng điền đầy đủ thông tin!');
-      setToastType('error'); // Thông báo lỗi
+      showToast('Vui lòng điền đầy đủ thông tin!', 'error');
+      setLoading(false);
       return;
     }
 
     if (user.length < 6 || /\s/.test(user)) {
-      setToastMessage('❌ Tên người dùng phải có ít nhất 6 ký tự và không có khoảng trắng!');
-      setToastType('error'); // Thông báo lỗi
+      showToast('Tên người dùng phải có ít nhất 6 ký tự và không có khoảng trắng!', 'error');
+      setLoading(false);
       return;
     }
 
     const passRegex = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
     if (!passRegex.test(pass)) {
-      setToastMessage('❌ Mật khẩu phải có ít nhất 6 ký tự, gồm cả chữ và số!');
-      setToastType('error'); // Thông báo lỗi
+      showToast('Mật khẩu phải có ít nhất 6 ký tự, gồm cả chữ và số!', 'error');
+      setLoading(false);
       return;
     }
 
     if (fullName.trim().split(' ').length < 2) {
-      setToastMessage('❌ Họ tên phải có ít nhất 2 từ!');
-      setToastType('error'); // Thông báo lỗi
+      showToast('Họ tên phải có ít nhất 2 từ!', 'error');
+      setLoading(false);
       return;
     }
 
     if (!isValidDate(dd, mm, yyyy)) {
-      setToastMessage('❌ Ngày sinh không hợp lệ!');
-      setToastType('error'); // Thông báo lỗi
+      showToast('Ngày sinh không hợp lệ!', 'error');
+      setLoading(false);
       return;
     }
 
@@ -75,7 +96,7 @@ const RegisterScreen = () => {
     };
 
     try {
-      const response = await fetch('http://192.168.10.7:3001/api/register', {
+      const response = await fetch('http://192.168.2.8:3001/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -83,119 +104,169 @@ const RegisterScreen = () => {
 
       const result = await response.json();
       if (result.success) {
-        setToastMessage('✅ Đăng ký thành công!');
-        setToastType('success'); // Thông báo thành công
-        
-        // Sau khi đăng ký thành công, điều hướng về trang đăng nhập
+        showToast('Đăng ký thành công!', 'success');
         setTimeout(() => {
-          router.replace('/login');  // Chuyển hướng đến trang login
-        }, 1000);  // Đợi một chút để người dùng thấy thông báo
+          router.replace('/login');
+        }, 1000);
       } else {
-        setToastMessage(result.message || '❌ Đăng ký thất bại');
-        setToastType('error'); // Thông báo lỗi
+        showToast(result.message || 'Đăng ký thất bại', 'error');
       }
     } catch (error) {
-      setToastMessage('❌ Không thể kết nối đến máy chủ. Vui lòng thử lại!');
-      setToastType('error'); // Thông báo lỗi
+      showToast('Không thể kết nối đến máy chủ. Vui lòng thử lại!', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Đăng ký</Text>
+    <ImageBackground
+      source={require('../assets/images/backgound(login).jpg')}
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <KeyboardAvoidingView behavior="padding">
+        <Text style={styles.header}>Đăng ký</Text>
 
-      {/* Thông báo đăng ký */}
-      {toastMessage ? (
-        <View style={[styles.toast, toastType === 'success' ? styles.toastSuccess : styles.toastError]}>
-          <Text style={styles.toastText}>{toastMessage}</Text>
+        {toastMessage ? (
+          <View style={[styles.toast, toastType === 'success' ? styles.toastSuccess : styles.toastError]}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
+        ) : null}
+
+        <TextInput
+          style={styles.input}
+          placeholder="Tên người dùng"
+          placeholderTextColor="#FFFFFF"
+          value={user}
+          onChangeText={setUser}
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Mật khẩu"
+          placeholderTextColor="#FFFFFF"
+          value={pass}
+          onChangeText={setPass}
+          secureTextEntry
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Họ và tên (không dấu)"
+          placeholderTextColor="#FFFFFF"
+          value={fullName}
+          onChangeText={setFullName}
+        />
+
+        {/* Dòng ngày/tháng/năm */}
+        <View style={styles.dateRow}>
+          <View style={styles.datePicker}>
+            <Picker selectedValue={dd} onValueChange={setDd} style={styles.picker}>
+              <Picker.Item label="Ngày sinh" value="" />
+              {Array.from({ length: 31 }, (_, i) => (
+                <Picker.Item key={i + 1} label={`${i + 1}`} value={`${i + 1}`} />
+              ))}
+            </Picker>
+          </View>
+          <View style={styles.datePicker}>
+            <Picker selectedValue={mm} onValueChange={setMm} style={styles.picker}>
+              <Picker.Item label="Tháng sinh" value="" />
+              {Array.from({ length: 12 }, (_, i) => (
+                <Picker.Item key={i + 1} label={`${i + 1}`} value={`${i + 1}`} />
+              ))}
+            </Picker>
+          </View>
+          <TextInput
+            style={[styles.inputYYYY, { flex: 1, marginLeft: 6 }]}
+            placeholder="Năm"
+            placeholderTextColor="#FFFFFF"
+            value={yyyy}
+            onChangeText={setYyyy}
+            keyboardType="numeric"
+            maxLength={4}
+          />
         </View>
-      ) : null}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Tên người dùng"
-        value={user}
-        onChangeText={setUser}
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Mật khẩu"
-        value={pass}
-        onChangeText={setPass}
-        secureTextEntry
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Họ và tên (không dấu)"
-        value={fullName}
-        onChangeText={setFullName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Ngày sinh (dd)"
-        value={dd}
-        onChangeText={setDd}
-        keyboardType="numeric"
-        maxLength={2}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Tháng sinh (mm)"
-        value={mm}
-        onChangeText={setMm}
-        keyboardType="numeric"
-        maxLength={2}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Năm sinh (yyyy)"
-        value={yyyy}
-        onChangeText={setYyyy}
-        keyboardType="numeric"
-        maxLength={4}
-      />
+        <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
+          <Text style={styles.buttonText}>{loading ? 'Đang xử lý...' : 'Đăng ký'}</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Đăng ký</Text>
-      </TouchableOpacity>
-
-      {/* Nút chuyển về trang đăng nhập */}
-      <TouchableOpacity style={styles.linkButton} onPress={() => router.replace('/login')}>
-        <Text style={styles.linkButtonText}>Đã có tài khoản? Đăng nhập ngay</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity style={styles.linkButton} onPress={() => router.replace('/login')}>
+          <Text style={styles.linkButtonText}>Đã có tài khoản? Đăng nhập ngay</Text>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
   },
   header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 4,
+  fontSize: 28,
+  fontWeight: 'bold',
+  marginBottom: 20,
+  textAlign: 'center',
+  color: '#FFFFFF',
+},
+
+toastText: {
+  textAlign: 'center',
+  color: '#FFFFFF',
+},
+
+input: {
+  height: 40,
+  borderColor: '#888',
+  borderWidth: 1,
+  borderRadius: 8,
+  marginBottom: 12,
+  paddingLeft: 8,
+  backgroundColor: 'rgba(255, 255, 255, 0.1)', // input mờ nhẹ
+  color: '#FFFFFF',
+},
+  dateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 12,
-    paddingLeft: 8,
   },
-  button: {
-    backgroundColor: '#007bff',
-    paddingVertical: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-    marginTop: 10,
+  datePicker: {
+    flex: 1,
+    height: 50,
+    width: 1500,
+    borderColor: '#888',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    color: '#FFFFFF',
+    justifyContent: 'center',
   },
+ picker: {
+  height: 60,
+  width: 1500,
+  color: '#FFFFFF',
+},
+inputYYYY: {
+  height: 50,
+  width: 1500,
+  color: '#FFFFFF',
+  borderColor: '#888',
+  borderWidth: 1,
+  borderRadius: 8,
+  paddingLeft: 1,
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    textAlign: 'center',
+},
+button: {
+  backgroundColor: '#1e90ff', // xanh nhạt sáng hơn
+  paddingVertical: 12,
+  borderRadius: 6,
+  alignItems: 'center',
+  marginTop: 10,
+},
+
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
@@ -209,25 +280,20 @@ const styles = StyleSheet.create({
   },
   toastSuccess: {
     backgroundColor: 'rgba(0, 255, 0, 0.1)',
-    color: 'green',
   },
   toastError: {
     backgroundColor: 'rgba(255, 0, 0, 0.1)',
-    color: 'red',
-  },
-  toastText: {
-    color: 'inherit',
-    textAlign: 'center',
   },
   linkButton: {
     marginTop: 20,
     alignItems: 'center',
   },
   linkButtonText: {
-    color: '#007bff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  color: '#87cefa',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
+
 });
 
 export default RegisterScreen;
