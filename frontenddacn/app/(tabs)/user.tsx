@@ -28,40 +28,28 @@ export default function InfoFormScreen() {
   const [year, setYear] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Khi load context xong -> tự động điền vào form
   useEffect(() => {
     const loadStoredUserData = async () => {
       try {
         const userInfoString = await AsyncStorage.getItem('userInfo');
-        console.log('Dữ liệu từ AsyncStorage:', userInfoString); // Ghi lại dữ liệu để kiểm tra
-    
-        if (userInfoString && userInfoString !== 'undefined') {
-          try {
-            const userInfo = JSON.parse(userInfoString);
-            if (userInfo) {
-              // Đảm bảo rằng tất cả các trường đều tồn tại và hợp lệ
-              setFullName(userInfo.fullName || '');
-              setDay(userInfo.dd || '');   // day = dd
-              setMonth(userInfo.mm || '');  // month = mm
-              setYear(userInfo.yyyy || ''); // year = yyyy
-            } else {
-              console.warn('Dữ liệu không hợp lệ trong AsyncStorage.');
-            }
-          } catch (parseError) {
-            console.warn('Lỗi phân tích JSON:', parseError);
+        if (userInfoString) {
+          const userInfo = JSON.parse(userInfoString);
+          if (userInfo) {
+            setFullName(userInfo.fullName || '');
+            setDay(userInfo.dd || '');
+            setMonth(userInfo.mm || '');
+            setYear(userInfo.yyyy || '');
           }
-        } else {
-          console.log('Không có dữ liệu trong AsyncStorage hoặc dữ liệu không hợp lệ.');
         }
       } catch (error) {
         console.error('Lỗi đọc AsyncStorage:', error);
       }
     };
-  
+
     if (!isLoading) {
       loadStoredUserData();
     }
-  }, [isLoading, initialName, initialDay, initialMonth, initialYear]);
+  }, [isLoading]);
 
   const handleNameChange = (text: string) => {
     const sanitized = text
@@ -131,6 +119,18 @@ export default function InfoFormScreen() {
     );
   };
 
+  const handleLogout = async () => {
+    try {
+      // Xóa dữ liệu người dùng khỏi AsyncStorage và context
+      await AsyncStorage.removeItem('userInfo');
+      await clearUserData(); // Đảm bảo xóa dữ liệu từ context
+      router.push('/login'); // Điều hướng về màn hình đăng nhập
+    } catch (error) {
+      console.error('Lỗi đăng xuất:', error);
+      Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -185,11 +185,6 @@ export default function InfoFormScreen() {
                     returnKeyType="next"
                     editable={!isSubmitting}
                   />
-                  {day.length > 0 && !isSubmitting && (
-                    <TouchableOpacity onPress={() => clearInput(setDay)} style={styles.clearButton}>
-                      <Text style={styles.clearButtonText}>×</Text>
-                    </TouchableOpacity>
-                  )}
                 </View>
 
                 <View style={[styles.inputContainer, styles.dateInputContainer, { flex: 2 }]}>
@@ -204,11 +199,6 @@ export default function InfoFormScreen() {
                     returnKeyType="next"
                     editable={!isSubmitting}
                   />
-                  {month.length > 0 && !isSubmitting && (
-                    <TouchableOpacity onPress={() => clearInput(setMonth)} style={styles.clearButton}>
-                      <Text style={styles.clearButtonText}>×</Text>
-                    </TouchableOpacity>
-                  )}
                 </View>
 
                 <View style={[styles.inputContainer, styles.dateInputContainer, { flex: 3 }]}>
@@ -224,11 +214,6 @@ export default function InfoFormScreen() {
                     onSubmitEditing={handleSubmit}
                     editable={!isSubmitting}
                   />
-                  {year.length > 0 && !isSubmitting && (
-                    <TouchableOpacity onPress={() => clearInput(setYear)} style={styles.clearButton}>
-                      <Text style={styles.clearButtonText}>×</Text>
-                    </TouchableOpacity>
-                  )}
                 </View>
               </View>
 
@@ -251,6 +236,11 @@ export default function InfoFormScreen() {
                   <Text style={styles.clearOldDataButtonText}>Nhập lại từ đầu</Text>
                 </TouchableOpacity>
               )}
+
+              {/* Nút Đăng xuất */}
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Text style={styles.logoutButtonText}>Đăng Xuất</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </TouchableWithoutFeedback>
@@ -277,4 +267,6 @@ const styles = StyleSheet.create({
   submitButtonText: { fontSize: 18, color: 'white' },
   clearOldDataButton: { marginTop: 20, paddingVertical: 10 },
   clearOldDataButtonText: { fontSize: 16, color: '#f00' },
+  logoutButton: { marginTop: 20, paddingVertical: 10, backgroundColor: '#f00', borderRadius: 25, width: '100%', alignItems: 'center' },
+  logoutButtonText: { fontSize: 18, color: 'white' },
 });

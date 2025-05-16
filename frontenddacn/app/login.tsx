@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@/untils/url';
 
 const LoginScreen = () => {
   const router = useRouter();
@@ -21,7 +22,7 @@ const LoginScreen = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://192.168.2.148:3001/api/login', {
+      const response = await fetch(`${BASE_URL}/api/login`,{
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

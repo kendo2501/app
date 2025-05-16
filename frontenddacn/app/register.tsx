@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { BASE_URL } from '@/untils/url';
 
 const RegisterScreen = () => {
   const router = useRouter();
@@ -75,7 +76,7 @@ const RegisterScreen = () => {
     };
 
     try {
-      const response = await fetch('http://192.168.2.148:3001/api/register', {
+      const response = await fetch(`${BASE_URL}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
