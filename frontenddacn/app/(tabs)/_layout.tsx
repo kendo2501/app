@@ -73,7 +73,11 @@ export default function TabLayout() {
         name="form"
         options={{
           title: 'User',
+<<<<<<< HEAD
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+=======
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+>>>>>>> 9f50e10aa843a78bc303a01ea687305b76f34581
         }}
       />
     </Tabs>

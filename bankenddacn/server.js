@@ -3,7 +3,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const connectMongoDB = require('./config/mongo');
 const authRoutes = require('./routes/authRoutes');
-const lifePathRoutes = require('./routes/lifePathRoutes'); // ✅ thêm dòng này
+// const lifePathRoutes = require('./routes/lifePathRoutes'); // ✅ thêm dòng này
 connectMongoDB(); // kết nối MongoDB trước khi server chạy
 
 require('./config/db');
