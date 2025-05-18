@@ -48,11 +48,7 @@ const LoginScreen = () => {
     setLoading(true);
 
     try {
-<<<<<<< HEAD
-      const response = await fetch('http://192.168.2.8:3001/api/login', {
-=======
       const response = await fetch(`${BASE_URL}/api/login`,{
->>>>>>> 9f50e10aa843a78bc303a01ea687305b76f34581
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

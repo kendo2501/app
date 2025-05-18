@@ -97,11 +97,7 @@ const RegisterScreen = () => {
     };
 
     try {
-<<<<<<< HEAD
-      const response = await fetch('http://192.168.2.8:3001/api/register', {
-=======
       const response = await fetch(`${BASE_URL}/api/register`, {
->>>>>>> 9f50e10aa843a78bc303a01ea687305b76f34581
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
