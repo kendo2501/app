@@ -1,42 +1,3 @@
-<<<<<<< HEAD
-import React, { useEffect, useState } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  ImageBackground,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-
-const { width, height } = Dimensions.get('window');
-
-export default function InfoStaticScreen() {
-  const router = useRouter();
-  const [userInfo, setUserInfo] = useState<{
-    fullName: string;
-    dd: number;
-    mm: number;
-    yyyy: number;
-  } | null>(null);
-
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      const stored = await AsyncStorage.getItem('userInfo');
-      if (stored) {
-        setUserInfo(JSON.parse(stored));
-      }
-    };
-    fetchUserInfo();
-  }, []);
-
-  const handleLogout = () => {
-    router.push('/login');
-  };
-
-=======
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet, View, Text, TextInput, ImageBackground, TouchableOpacity,
@@ -178,38 +139,12 @@ export default function InfoFormScreen() {
     );
   }
 
->>>>>>> 9f50e10aa843a78bc303a01ea687305b76f34581
   return (
     <ImageBackground
       source={require('../../assets/images/background.jpg')}
       style={styles.background}
       resizeMode="cover"
     >
-<<<<<<< HEAD
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>⎋</Text>
-      </TouchableOpacity>
-
-      <View style={styles.centerContent}>
-        <Text style={styles.name}>
-          {userInfo?.fullName || 'Đang tải...'}
-        </Text>
-
-        <View style={styles.dateContainer}>
-          <Text style={styles.datePart}>
-            {userInfo?.dd?.toString().padStart(2, '0') || '--'}
-          </Text>
-          <Text style={styles.separator}>/</Text>
-          <Text style={styles.datePart}>
-            {userInfo?.mm?.toString().padStart(2, '0') || '--'}
-          </Text>
-          <Text style={styles.separator}>/</Text>
-          <Text style={styles.datePart}>
-            {userInfo?.yyyy?.toString() || '----'}
-          </Text>
-        </View>
-      </View>
-=======
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingContainer}
@@ -310,54 +245,10 @@ export default function InfoFormScreen() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
->>>>>>> 9f50e10aa843a78bc303a01ea687305b76f34581
     </ImageBackground>
   );
 }
 
-<<<<<<< HEAD
-const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  logoutButton: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    zIndex: 10,
-  },
-  logoutText: {
-    fontSize: 24,
-    color: '#fff',
-  },
-  centerContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  name: {
-    fontSize: 26,
-    color: '#fff',
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  datePart: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  separator: {
-    fontSize: 24,
-    color: '#fff',
-    marginHorizontal: 6,
-  },
-=======
 // --- Style ---
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#333' },
@@ -378,5 +269,4 @@ const styles = StyleSheet.create({
   clearOldDataButtonText: { fontSize: 16, color: '#f00' },
   logoutButton: { marginTop: 20, paddingVertical: 10, backgroundColor: '#f00', borderRadius: 25, width: '100%', alignItems: 'center' },
   logoutButtonText: { fontSize: 18, color: 'white' },
->>>>>>> 9f50e10aa843a78bc303a01ea687305b76f34581
 });
