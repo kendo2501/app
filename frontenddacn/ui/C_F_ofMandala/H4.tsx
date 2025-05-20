@@ -11,29 +11,42 @@ import {
     Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Added AsyncStorage
 
 import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Đảm bảo đường dẫn đúng
 
-// --- Cấu hình ---
-const USER_ID_TO_FETCH = 1;
 const BACKGROUND_IMAGE = require('../../assets/images/background.jpg');
+
+// --- TypeScript Interface for UserInfo (H4 specific) ---
+// H4 Screen needs day, month, and year for its calculation.
+interface UserInfo {
+  dd: number;
+  mm: number;
+  yyyy: number;
+}
 
 // --- Helper Functions ---
 
 // Tính tổng các chữ số (Cần cho rút gọn H4)
 const sumDigits = (num: number): number => {
     try {
-        if (num < 0) return 0;
+        if (num < 0) {
+            console.warn(`[sumDigits H4] Input is negative (${num}), returning 0.`);
+            return 0; // Or handle as an error, though typically numerology deals with positive integers.
+        }
         return String(num)
             .split('')
             .reduce((s, digit) => {
                 const digitNum = parseInt(digit, 10);
-                return s + (isNaN(digitNum) ? 0 : digitNum);
+                return s + (isNaN(digitNum) ? 0 : digitNum); // Treat non-digits as 0
             }, 0);
-    } catch (e) { console.error(`[sumDigits H4] Error:`, e); return 0; }
+    } catch (e) {
+        console.error(`[sumDigits H4] Error for input ${num}:`, e);
+        return 0; // Return a neutral value or throw error
+    }
 };
 
-// H2 Ban đầu (Cần để lấy số tháng hợp lệ cho H4)
+// H2 Ban đầu (Cần để lấy số tháng hợp lệ cho H4) - validates month is 1-12
 const calculateH2InitialValue = (monthInput: number | string | null | undefined): number | null => {
     if (monthInput === null || monthInput === undefined || monthInput === '') return null;
     const monthValue = Number(monthInput);
@@ -43,25 +56,29 @@ const calculateH2InitialValue = (monthInput: number | string | null | undefined)
 };
 
 // H4 Final (<=22 - Life Path)
-const getFinalH4Value = (day: number | string | null | undefined, month: number | string | null | undefined, year: number | string | null | undefined): number | null => {
-    // Chuyển đổi và kiểm tra đầu vào
-    const dayNum = (typeof day === 'string') ? Number(day) : day;
-    const monthNum = calculateH2InitialValue(month); // Lấy số tháng hợp lệ
-    const yearNum = (typeof year === 'string') ? Number(year) : year;
+const getFinalH4Value = (day: number | null | undefined, month: number | null | undefined, year: number | null | undefined): number | null => {
+    // Directly use validated numbers from UserInfo, no need for string conversion here if UserInfo has numbers
+    const dayNum = (day !== null && day !== undefined && day > 0) ? day : null;
+    const monthNum = calculateH2InitialValue(month); // Validates month is 1-12
+    const yearNum = (year !== null && year !== undefined && year > 0) ? year : null;
 
-     if (dayNum === null || monthNum === null || yearNum === null || isNaN(dayNum) || isNaN(yearNum) || dayNum <=0 || yearNum <=0 ) {
-         console.warn(`[getFinalH4Value H4] Invalid inputs: d=${day}(${dayNum}), m=${month}(${monthNum}), y=${year}(${yearNum})`);
-         return null;
-     }
+    if (dayNum === null || monthNum === null || yearNum === null ) {
+        console.warn(`[getFinalH4Value H4] Invalid inputs after validation: d=${dayNum}, m=${monthNum}, y=${yearNum}`);
+        return null;
+    }
 
     try {
         let currentSum = dayNum + monthNum + yearNum;
-        // Rút gọn tổng nếu lớn hơn 22
+        console.log(`[getFinalH4Value H4] Initial sum (d+m+y): ${dayNum}+${monthNum}+${yearNum} = ${currentSum}`);
+
+        // Rút gọn tổng nếu lớn hơn 22 (và không phải 11 hoặc 22 nếu those are master numbers - this logic correctly keeps 11, 22 as they are not > 22)
         while (currentSum > 22) {
+            const previousSum = currentSum;
             currentSum = sumDigits(currentSum);
+            console.log(`[getFinalH4Value H4] Reducing ${previousSum} -> ${currentSum}`);
         }
-        console.log(`[getFinalH4Value H4] final H4: ${currentSum}`);
-        return currentSum; // Kết quả đã rút gọn <= 22
+        console.log(`[getFinalH4Value H4] Final H4: ${currentSum}`);
+        return currentSum;
     } catch (e) {
         console.error("[getFinalH4Value H4] Error during calculation:", e);
         return null;
@@ -92,77 +109,134 @@ const styles = StyleSheet.create({
 // --- Component H4 ---
 export default function H4Screen() {
     const [h4Number, setH4Number] = useState<number | null>(null);
-    const [userData, setUserData] = useState<any>(null);
+    // userInfo state is now typed with the H4-specific UserInfo interface
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
-             setLoading(true); setError(null); setUserData(null);
-             setH4Number(null); setMandalaDescription(null);
-             try {
-                const fetchedUserData = await getUserById(USER_ID_TO_FETCH);
-                setUserData(fetchedUserData);
-                const dayValue = fetchedUserData?.dd;
-                const monthValue = fetchedUserData?.mm; // Input tháng (có thể là string "0X")
-                const yearValue = fetchedUserData?.yyyy;
+            setLoading(true);
+            setError(null);
+            setUserInfo(null);
+            setH4Number(null);
+            setMandalaDescription(null);
 
-                console.log(`[H4] Inputs: dd=${dayValue}, mm=${monthValue}, yyyy=${yearValue}`);
+            try {
+                console.log("[H4Screen] Fetching user data from AsyncStorage key: 'userInfo'");
+                const storedUserInfo = await AsyncStorage.getItem('userInfo');
 
-                const finalH4 = getFinalH4Value(dayValue, monthValue, yearValue); // Tính H4 cuối cùng
-                setH4Number(finalH4);
-                // Log giá trị cuối đã có trong getFinalH4Value
+                if (storedUserInfo) {
+                    const parsedFullUserInfo = JSON.parse(storedUserInfo);
 
-                 if (finalH4 !== null) {
-                    const description = await searchMandalaInfoByNumber(finalH4);
-                    if (typeof description === 'string' && description.trim().length > 0) {
-                        setMandalaDescription(description);
+                    // Validate presence and type of dd, mm, yyyy
+                    if (typeof parsedFullUserInfo.dd === 'number' &&
+                        typeof parsedFullUserInfo.mm === 'number' &&
+                        typeof parsedFullUserInfo.yyyy === 'number') {
+
+                        const componentSpecificUserInfo: UserInfo = {
+                            dd: parsedFullUserInfo.dd,
+                            mm: parsedFullUserInfo.mm,
+                            yyyy: parsedFullUserInfo.yyyy,
+                        };
+                        setUserInfo(componentSpecificUserInfo);
+                        console.log("[H4Screen] Relevant user data for H4:", componentSpecificUserInfo);
+
+                        const finalH4 = getFinalH4Value(
+                            componentSpecificUserInfo.dd,
+                            componentSpecificUserInfo.mm,
+                            componentSpecificUserInfo.yyyy
+                        );
+                        setH4Number(finalH4);
+
+                        if (finalH4 !== null) {
+                            const description = await searchMandalaInfoByNumber(finalH4);
+                            if (typeof description === 'string' && description.trim().length > 0) {
+                                setMandalaDescription(description);
+                            } else {
+                                setMandalaDescription(`Không tìm thấy mô tả cho số H4: ${finalH4}.`);
+                                console.warn(`[H4Screen] No valid description found for H4=${finalH4}. API returned:`, description);
+                            }
+                        } else {
+                            setError("Lỗi tính toán H4 do dữ liệu ngày/tháng/năm không hợp lệ sau khi kiểm tra.");
+                            setMandalaDescription("Lỗi tính toán H4.");
+                        }
                     } else {
-                        setMandalaDescription(`Không tìm thấy mô tả cho số H4: ${finalH4}.`);
-                        console.warn(`[H4] No valid description found for H4=${finalH4}. API returned:`, description);
+                        console.warn("[H4Screen] dd, mm, or yyyy field is missing or not a number in stored userInfo.");
+                        const missingFields = ['dd', 'mm', 'yyyy'].filter(f => typeof parsedFullUserInfo[f] !== 'number').join(', ');
+                        setError(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu từ thông tin đã lưu.`);
+                        setMandalaDescription(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu.`);
                     }
-                 } else {
-                     setError("Lỗi tính toán H4 do dữ liệu ngày/tháng/năm không hợp lệ.");
-                     setMandalaDescription("Lỗi tính toán H4.");
-                 }
-             } catch (err: any) {
-                 console.error("[H4] Error loading data:", err);
-                 const errorMessage = err?.message || "Đã xảy ra lỗi không xác định.";
-                 setError(errorMessage);
-                 setMandalaDescription("Lỗi khi tải dữ liệu.");
-                 Alert.alert("Lỗi H4", errorMessage);
-             }
-             finally { setLoading(false); console.log("[H4] Loading finished."); }
+                } else {
+                    console.warn("[H4Screen] No 'userInfo' found in AsyncStorage.");
+                    setError("Không tìm thấy thông tin người dùng đã lưu.");
+                    setMandalaDescription("Vui lòng kiểm tra lại thông tin người dùng hoặc đăng nhập lại.");
+                }
+            } catch (err: any) {
+                console.error("[H4Screen] Error during loadData:", err);
+                let errorMessage = "Đã xảy ra lỗi không xác định.";
+                if (err instanceof SyntaxError) {
+                    errorMessage = "Lỗi định dạng dữ liệu người dùng đã lưu.";
+                } else if (err?.message) {
+                    errorMessage = err.message;
+                }
+                setError(errorMessage);
+                setMandalaDescription("Lỗi khi tải dữ liệu.");
+                Alert.alert("Lỗi H4", errorMessage);
+            } finally {
+                setLoading(false);
+                console.log("[H4Screen] Loading finished.");
+            }
         };
         loadData();
     }, []);
 
-     const handleGoBack = () => { console.log('Go back pressed'); };
+    const handleGoBack = () => { console.log('Go back pressed'); };
 
-     // --- Render Logic ---
-      if (loading && !userData) {
-         // Màn hình loading ban đầu
-        return ( <View style={[styles.container, styles.centerContent]}><ImageBackground source={BACKGROUND_IMAGE} style={StyleSheet.absoluteFill} /><ActivityIndicator size="large" color="#ffffff" /><Text style={{ color: 'white', marginTop: 10 }}>Đang tải dữ liệu...</Text></View> );
-      }
-      return (
-          <ImageBackground source={BACKGROUND_IMAGE} style={styles.background}>
-              <SafeAreaView style={styles.safeArea}>
-                  <StatusBar barStyle="light-content" />
-                  <View style={styles.header}>
-                      <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={28} color="white" /></TouchableOpacity>
-                      <View style={styles.titleContainer}><Text style={styles.title}>H4</Text></View>
-                      <View style={styles.backButtonPlaceholder} />
-                  </View>
-                  <View style={styles.content}>
-                      <View style={styles.circle}>
-                          {(loading && h4Number === null) ? (<ActivityIndicator size="small" color="#E6007E" />) : h4Number !== null ? (<Text style={styles.number}>{h4Number}</Text>) : (<Text style={styles.number}>-</Text>)}
-                      </View>
-                      <View style={styles.textBox}>
-                          <Text style={styles.descriptionText}>{loading ? "Đang tải mô tả..." : mandalaDescription ? mandalaDescription : error ? error : "Không có mô tả."}</Text>
-                      </View>
-                  </View>
-              </SafeAreaView>
-          </ImageBackground>
-       );
+    if (loading && !userInfo) {
+        return (
+            <View style={[styles.container, styles.centerContent, {backgroundColor: '#2c3e50'}]}>
+                <ImageBackground source={BACKGROUND_IMAGE} style={StyleSheet.absoluteFill} />
+                <ActivityIndicator size="large" color="#ffffff" />
+                <Text style={{ color: 'white', marginTop: 10 }}>Đang tải dữ liệu...</Text>
+            </View>
+        );
+    }
+
+    return (
+        <ImageBackground source={BACKGROUND_IMAGE} style={styles.background}>
+            <SafeAreaView style={styles.safeArea}>
+                <StatusBar barStyle="light-content" />
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={28} color="white" /></TouchableOpacity>
+                    <View style={styles.titleContainer}><Text style={styles.title}>H4</Text></View>
+                    <View style={styles.backButtonPlaceholder} />
+                </View>
+                <View style={styles.content}>
+                    <View style={styles.circle}>
+                        {(loading && h4Number === null && userInfo !== null) ? (
+                            <ActivityIndicator size="small" color="#E6007E" />
+                        ) : h4Number !== null ? (
+                            <Text style={styles.number}>{h4Number}</Text>
+                        ) : (
+                            <Text style={styles.number}>{userInfo === null && !loading ? "!" : "-"}</Text>
+                        )}
+                    </View>
+                    <View style={styles.textBox}>
+                        <Text style={styles.descriptionText}>
+                            {loading && !mandalaDescription ?
+                                "Đang tải mô tả..." :
+                                mandalaDescription ?
+                                mandalaDescription :
+                                error ?
+                                error : // Display the specific error message
+                                "Không có mô tả hoặc không thể tải."
+                            }
+                        </Text>
+                    </View>
+                </View>
+            </SafeAreaView>
+        </ImageBackground>
+    );
 }

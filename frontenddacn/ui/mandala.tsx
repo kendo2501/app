@@ -22,11 +22,11 @@ import H5 from '../ui/C_F_ofMandala/H5';
 import H6 from '../ui/C_F_ofMandala/H6';
 import H7 from '../ui/C_F_ofMandala/H7';
 import H8 from '../ui/C_F_ofMandala/H8';
-// import H9 from '../../mandala/H9';
-// import H10 from '../../mandala/H10';
-// import H11 from '../../mandala/H11';
-// import H12 from '../../mandala/H12';
-// import H13 from '../../mandala/H13';
+import H9 from '../ui/C_F_ofMandala//H9';
+import H10 from '../ui/C_F_ofMandala//H10';
+import H11 from '../ui/C_F_ofMandala//H11';
+import H12 from '../ui/C_F_ofMandala//H12';
+import H13 from '../ui/C_F_ofMandala//H13';
 
 // --- Component Chính ---
 const MandalaScreen: React.FC = () => {
@@ -109,11 +109,11 @@ const MandalaScreen: React.FC = () => {
             case 'H6': DetailComponent = H6; break;
             case 'H7': DetailComponent = H7; break;
             case 'H8': DetailComponent = H8; break;
-            // case 'H9': DetailComponent = H9; break;
-            // case 'H10': DetailComponent = H10; break;
-            // case 'H11': DetailComponent = H11; break;
-            // case 'H12': DetailComponent = H12; break;
-            // case 'H13': DetailComponent = H13; break;
+            case 'H9': DetailComponent = H9; break;
+            case 'H10': DetailComponent = H10; break;
+            case 'H11': DetailComponent = H11; break;
+            case 'H12': DetailComponent = H12; break;
+            case 'H13': DetailComponent = H13; break;
             default:
                 console.error(`Component for ${selectedMandalaId} not found or not imported.`);
                 DetailComponent = () => (

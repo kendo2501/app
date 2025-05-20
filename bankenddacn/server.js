@@ -1,22 +1,23 @@
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const connectMongoDB = require('./config/mongo');
-const authRoutes = require('./routes/authRoutes');
-// const lifePathRoutes = require('./routes/lifePathRoutes'); // ✅ thêm dòng này
-connectMongoDB(); // kết nối MongoDB trước khi server chạy
+const morgan = require('morgan'); 
 
-require('./config/db');
+const numberRoutes = require('./routes/numberRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
-const port = 3001;
+const port = 3000;
 
-app.use(cors());
-app.use(bodyParser.json());
+// Middleware
+app.use(cors()); 
+app.use(express.json());
+app.use(morgan('dev')); 
 
-app.use('/api', authRoutes);
+// Routes
+app.use('/', numberRoutes);     
+app.use('/api', authRoutes);   
 
-
+// Khởi chạy server
 app.listen(port, () => {
-  console.log(`Server đang chạy tại http://localhost:${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });

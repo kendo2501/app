@@ -11,36 +11,41 @@ import {
     Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Added AsyncStorage
 
 // Import hàm gọi API từ file service
-
 import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Đảm bảo đường dẫn đúng
 
 // --- Cấu hình ---
-const USER_ID_TO_FETCH = 1; // ID của user bạn muốn lấy dữ liệu
+// USER_ID_TO_FETCH is removed as we now fetch 'userInfo' from AsyncStorage
 const BACKGROUND_IMAGE = require('../../assets/images/background.jpg'); // Đường dẫn tới ảnh nền
+
+// --- TypeScript Interface for UserInfo ---
+// Defines the structure of the user information expected from AsyncStorage.
+interface UserInfo {
+  yyyy: number;       
+}
 
 // --- Hàm tính tổng các chữ số của Năm ---
 const calculateYearNumber = (year: number | null | undefined): number | null => {
-    // Kiểm tra đầu vào có phải là số năm hợp lệ không
     if (year === null || year === undefined || typeof year !== 'number' || year <= 0) {
-        console.warn(`[calculateYearNumber] Invalid input year: ${year}, returning null.`);
+        console.warn(`[calculateYearNumber H3] Invalid input year: ${year}, returning null.`);
         return null;
     }
     try {
-        // Tính tổng các chữ số
         const sum = String(year)
             .split('')
             .reduce((s, digit) => {
                 const num = parseInt(digit, 10);
-                return s + (isNaN(num) ? 0 : num); // Xử lý nếu có ký tự không phải số
+                return s + (isNaN(num) ? 0 : num);
             }, 0);
 
-        console.log(`[calculateYearNumber] Input: ${year}, Sum: ${sum}`);
-        // Tùy chọn: Thêm logic rút gọn nếu cần (hiện tại không rút gọn)
+        console.log(`[calculateYearNumber H3] Input: ${year}, Sum: ${sum}`);
+        // Note: This function currently does not reduce the sum further (e.g., 19 remains 19, not 1+9=10 -> 1).
+        // If reduction is needed (e.g., to a single digit or master number 11, 22), that logic would be added here.
         return sum;
     } catch (e) {
-        console.error("[calculateYearNumber] Error calculating year number:", e);
+        console.error("[calculateYearNumber H3] Error calculating year number:", e);
         return null;
     }
 };
@@ -67,9 +72,10 @@ const styles = StyleSheet.create({
 // --- End of Styles Definition ---
 
 // --- React Component Definition ---
-export default function App() {
+// Renamed App to H3Screen for clarity
+export default function H3Screen() {
     const [yearNumber, setYearNumber] = useState<number | null>(null);
-    const [userData, setUserData] = useState<any>(null);
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null); // Changed from userData and typed
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -78,58 +84,68 @@ export default function App() {
         const loadData = async () => {
             setLoading(true);
             setError(null);
-            setUserData(null);
+            // Reset states
+            setUserInfo(null);
             setYearNumber(null);
             setMandalaDescription(null);
 
             try {
-                // --- Step 1: Fetch User Data ---
-                console.log(`[App] Fetching user data for ID: ${USER_ID_TO_FETCH}`);
-                const fetchedUserData = await getUserById(USER_ID_TO_FETCH);
-                setUserData(fetchedUserData);
-                // Log dữ liệu nhận được ĐỂ KIỂM TRA
-                console.log("[App] User data received:", JSON.stringify(fetchedUserData)); // Dùng stringify để xem rõ hơn
+                // --- Step 1: Fetch User Data from AsyncStorage ---
+                console.log("[H3Screen] Fetching user data from AsyncStorage key: 'userInfo'");
+                const storedUserInfo = await AsyncStorage.getItem('userInfo');
 
-                // --- Step 2: Calculate Year Number ---
-                // Lấy giá trị năm từ trường 'yyyy' (ĐÃ SỬA)
-                const yearValueFromAPI = fetchedUserData?.yyyy;
-                console.log(`[App] Value from fetchedUserData.yyyy: ${yearValueFromAPI} (Type: ${typeof yearValueFromAPI})`); // Log giá trị và kiểu dữ liệu
-                const calculatedYearNum = calculateYearNumber(yearValueFromAPI);
-                console.log(`[App] Calculated year number result: ${calculatedYearNum}`); // Log kết quả tính toán
-                setYearNumber(calculatedYearNum);
+                if (storedUserInfo) {
+                    const parsedUserInfo: UserInfo = JSON.parse(storedUserInfo);
+                    setUserInfo(parsedUserInfo);
+                    console.log("[H3Screen] User data received from AsyncStorage:", parsedUserInfo);
 
-                // --- Step 3: Fetch Mandala Description (nếu yearNumber hợp lệ) ---
-                if (calculatedYearNum !== null) {
-                    console.log(`[App] Fetching Mandala description for year number: ${calculatedYearNum}`);
-                    const description = await searchMandalaInfoByNumber(calculatedYearNum);
-                    console.log(`[App] Mandala description received: "${description}"`);
+                    // --- Step 2: Calculate Year Number ---
+                    const yearValueFromStorage = parsedUserInfo?.yyyy;
+                    console.log(`[H3Screen] Value from parsedUserInfo.yyyy: ${yearValueFromStorage} (Type: ${typeof yearValueFromStorage})`);
+                    const calculatedYearNum = calculateYearNumber(yearValueFromStorage);
+                    console.log(`[H3Screen] Calculated year number result: ${calculatedYearNum}`);
+                    setYearNumber(calculatedYearNum);
 
-                    if (typeof description === 'string' && description.trim().length > 0) {
-                        setMandalaDescription(description);
+                    // --- Step 3: Fetch Mandala Description (if yearNumber is valid) ---
+                    if (calculatedYearNum !== null) {
+                        console.log(`[H3Screen] Fetching Mandala description for year number: ${calculatedYearNum}`);
+                        const description = await searchMandalaInfoByNumber(calculatedYearNum);
+                        console.log(`[H3Screen] Mandala description received: "${description}"`);
+
+                        if (typeof description === 'string' && description.trim().length > 0) {
+                            setMandalaDescription(description);
+                        } else {
+                            setMandalaDescription(`Không tìm thấy mô tả cho số năm ${calculatedYearNum}.`);
+                            console.warn(`[H3Screen] No valid description found for year number: ${calculatedYearNum}. API returned:`, description);
+                        }
                     } else {
-                        setMandalaDescription(`Không tìm thấy mô tả cho số năm ${calculatedYearNum}.`);
-                        console.warn(`[App] No valid description found for year number: ${calculatedYearNum}. API returned:`, description);
+                        console.warn("[H3Screen] Cannot fetch Mandala description because calculated year number is null.");
+                        if (yearValueFromStorage === null || yearValueFromStorage === undefined) {
+                            setMandalaDescription("Dữ liệu năm ('yyyy') bị thiếu từ thông tin đã lưu.");
+                        } else {
+                            setMandalaDescription(`Dữ liệu năm ('yyyy': ${yearValueFromStorage}) không hợp lệ.`);
+                        }
                     }
                 } else {
-                    // Xảy ra nếu fetchedUserData.yyyy không hợp lệ/thiếu/ không tính được
-                    console.warn("[App] Cannot fetch Mandala description because calculated year number is null.");
-                     // Kiểm tra lại giá trị yearValueFromAPI để biết tại sao null
-                    if (yearValueFromAPI === null || yearValueFromAPI === undefined) {
-                       setMandalaDescription("Dữ liệu năm ('yyyy') bị thiếu từ API.");
-                    } else {
-                       setMandalaDescription(`Dữ liệu năm ('yyyy': ${yearValueFromAPI}) không hợp lệ.`);
-                    }
+                    console.warn("[H3Screen] No 'userInfo' found in AsyncStorage.");
+                    setError("Không tìm thấy thông tin người dùng đã lưu.");
+                    setMandalaDescription("Vui lòng kiểm tra lại thông tin người dùng hoặc đăng nhập lại.");
                 }
 
             } catch (err: any) {
-                console.error("Error during loadData:", err); // Log lỗi chi tiết hơn
-                const errorMessage = err?.message || "Đã xảy ra lỗi không xác định.";
+                console.error("[H3Screen] Error during loadData:", err);
+                let errorMessage = "Đã xảy ra lỗi không xác định.";
+                if (err instanceof SyntaxError) {
+                    errorMessage = "Lỗi định dạng dữ liệu người dùng đã lưu.";
+                } else if (err?.message) {
+                    errorMessage = err.message;
+                }
                 setError(errorMessage);
-                setMandalaDescription("Lỗi khi tải dữ liệu."); // Thông báo lỗi chung hơn
-                Alert.alert("Lỗi", `Đã xảy ra lỗi khi tải dữ liệu: ${errorMessage}`); // Hiển thị lỗi chi tiết hơn
+                setMandalaDescription("Lỗi khi tải dữ liệu.");
+                Alert.alert("Lỗi H3", `Đã xảy ra lỗi khi tải dữ liệu: ${errorMessage}`);
             } finally {
                 setLoading(false);
-                console.log("[App] Loading finished.");
+                console.log("[H3Screen] Loading finished.");
             }
         };
 
@@ -137,27 +153,54 @@ export default function App() {
     }, []);
 
     // --- Navigation Handler ---
-    const handleGoBack = () => { console.log('Go back pressed'); };
+    const handleGoBack = () => {
+        console.log('Go back pressed');
+        // Add navigation logic here (e.g., router.back() if using expo-router)
+    };
 
     // --- Render Logic ---
-    if (loading && !userData) {
-     return ( <View style={[styles.container, styles.centerContent]}><ImageBackground source={BACKGROUND_IMAGE} style={StyleSheet.absoluteFill} /><ActivityIndicator size="large" color="#ffffff" /><Text style={{ color: 'white', marginTop: 10 }}>Đang tải dữ liệu...</Text></View> );
+    if (loading && !userInfo) { // Changed from !userData to !userInfo
+        return (
+            <View style={[styles.container, styles.centerContent, {backgroundColor: '#2c3e50' /* Fallback background */}]}>
+                <ImageBackground source={BACKGROUND_IMAGE} style={StyleSheet.absoluteFill} />
+                <ActivityIndicator size="large" color="#ffffff" />
+                <Text style={{ color: 'white', marginTop: 10 }}>Đang tải dữ liệu...</Text>
+            </View>
+        );
     }
+
     return (
         <ImageBackground source={BACKGROUND_IMAGE} style={styles.background}>
             <SafeAreaView style={styles.safeArea}>
                 <StatusBar barStyle="light-content" />
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={28} color="white" /></TouchableOpacity>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={28} color="white" />
+                    </TouchableOpacity>
                     <View style={styles.titleContainer}><Text style={styles.title}>H3</Text></View>
                     <View style={styles.backButtonPlaceholder} />
                 </View>
                 <View style={styles.content}>
                     <View style={styles.circle}>
-                        {(loading && yearNumber === null) ? (<ActivityIndicator size="small" color="#E6007E" />) : yearNumber !== null ? (<Text style={styles.number}>{yearNumber}</Text>) : (<Text style={styles.number}>-</Text>)}
+                        {(loading && yearNumber === null && userInfo !== null) ? ( // More specific loading in circle
+                            <ActivityIndicator size="small" color="#E6007E" />
+                        ) : yearNumber !== null ? (
+                            <Text style={styles.number}>{yearNumber}</Text>
+                        ) : (
+                             <Text style={styles.number}>{userInfo === null && !loading ? "!" : "-"}</Text>
+                        )}
                     </View>
                     <View style={styles.textBox}>
-                        <Text style={styles.descriptionText}>{loading ? "Đang tải mô tả..." : mandalaDescription ? mandalaDescription : error ? "Lỗi khi tải mô tả." : "Không có mô tả."}</Text>
+                        <Text style={styles.descriptionText}>
+                            {loading && !mandalaDescription ?
+                                "Đang tải mô tả..." :
+                                mandalaDescription ?
+                                mandalaDescription :
+                                error && !mandalaDescription ? // If overall error and no specific description
+                                error : // Display the error message from setError
+                                "Không có mô tả hoặc không thể tải."
+                            }
+                        </Text>
                     </View>
                 </View>
             </SafeAreaView>

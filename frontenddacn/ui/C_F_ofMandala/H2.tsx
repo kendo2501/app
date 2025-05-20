@@ -11,21 +11,30 @@ import {
     Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Added AsyncStorage
 
 import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Đảm bảo đường dẫn đúng
 
 // --- Cấu hình ---
-const USER_ID_TO_FETCH = 1;
+// USER_ID_TO_FETCH is removed as we now fetch 'userInfo' from AsyncStorage
 const BACKGROUND_IMAGE = require('../../assets/images/background.jpg');
+
+// --- TypeScript Interface for UserInfo ---
+// Defines the structure of the user information expected from AsyncStorage.
+interface UserInfo {
+  
+  mm: number;         // Required: Month of birth, used for H2 calculation
+    // Optional: Full name
+}
 
 // --- Helper Functions ---
 // H2 Ban đầu (Tháng hợp lệ - ĐÃ SỬA ĐỂ NHẬN CẢ STRING "0X")
 const calculateH2InitialValue = (monthInput: number | string | null | undefined): number | null => {
     if (monthInput === null || monthInput === undefined || monthInput === '') {
-         // console.warn(`[calculateH2InitialValue H2] Input is null/undefined/empty.`);
-         return null;
+        // console.warn("[calculateH2InitialValue H2] Input is null/undefined/empty."); // Corrected console log
+        return null;
     }
-    const monthValue = Number(monthInput);
+    const monthValue = Number(monthInput); // Converts "08" to 8, etc.
     if (!isNaN(monthValue) && Number.isInteger(monthValue) && monthValue >= 1 && monthValue <= 12) {
         return monthValue;
     } else {
@@ -33,7 +42,7 @@ const calculateH2InitialValue = (monthInput: number | string | null | undefined)
         return null;
     }
 };
-// H2 Final (là chính nó vì <= 12)
+// H2 Final (là chính nó vì tháng sinh hợp lệ từ 1-12 là giá trị cuối cùng cho H2)
 const getFinalH2Value = calculateH2InitialValue;
 // --------------------
 
@@ -46,7 +55,7 @@ const styles = StyleSheet.create({
     safeArea: { flex: 1, },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingTop: 15, paddingBottom: 10, width: '100%', },
     backButton: { padding: 5, },
-    backButtonPlaceholder: { width: 38, height: 38, }, // Adjust size to match back button visual space
+    backButtonPlaceholder: { width: 38, height: 38, },
     titleContainer: { backgroundColor: 'white', paddingVertical: 8, paddingHorizontal: 30, borderRadius: 5, },
     title: { fontSize: 18, fontWeight: 'bold', color: '#333', textAlign: 'center', },
     content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, },
@@ -60,71 +69,125 @@ const styles = StyleSheet.create({
 // --- Component H2 ---
 export default function H2Screen() {
     const [h2Number, setH2Number] = useState<number | null>(null);
-    const [userData, setUserData] = useState<any>(null);
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null); // Changed from userData to userInfo and typed
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
-            setLoading(true); setError(null); setUserData(null);
-            setH2Number(null); setMandalaDescription(null);
-            try {
-                const fetchedUserData = await getUserById(USER_ID_TO_FETCH);
-                setUserData(fetchedUserData);
-                const monthInput = fetchedUserData?.mm; // Lấy dữ liệu tháng (có thể là string hoặc number)
-                const finalH2 = getFinalH2Value(monthInput); // Sử dụng hàm đã sửa
-                setH2Number(finalH2);
-                console.log(`[H2] Final H2 number: ${finalH2}`);
+            setLoading(true);
+            setError(null);
+            // Reset states
+            setUserInfo(null);
+            setH2Number(null);
+            setMandalaDescription(null);
 
-                if (finalH2 !== null) {
-                    const description = await searchMandalaInfoByNumber(finalH2);
-                    if (typeof description === 'string' && description.trim().length > 0) {
-                        setMandalaDescription(description);
+            try {
+                // Fetch user data from AsyncStorage
+                console.log("[H2] Fetching user data from AsyncStorage key: 'userInfo'");
+                const storedUserInfo = await AsyncStorage.getItem('userInfo');
+
+                if (storedUserInfo) {
+                    const parsedUserInfo: UserInfo = JSON.parse(storedUserInfo);
+                    setUserInfo(parsedUserInfo); // Update component state
+                    console.log("[H2] User data received from AsyncStorage:", parsedUserInfo);
+
+                    const monthInput = parsedUserInfo?.mm; // Get month from parsed user info
+                    const finalH2 = getFinalH2Value(monthInput);
+                    setH2Number(finalH2);
+                    console.log(`[H2] Input month: ${monthInput}, Final H2 number: ${finalH2}`);
+
+                    if (finalH2 !== null) {
+                        const description = await searchMandalaInfoByNumber(finalH2);
+                        if (typeof description === 'string' && description.trim().length > 0) {
+                            setMandalaDescription(description);
+                        } else {
+                            setMandalaDescription(`Không tìm thấy mô tả cho tháng ${finalH2}.`);
+                            console.warn(`[H2] No valid description found for H2=${finalH2}. API returned:`, description);
+                        }
                     } else {
-                        setMandalaDescription(`Không tìm thấy mô tả cho tháng ${finalH2}.`);
-                        console.warn(`[H2] No valid description found for H2=${finalH2}. API returned:`, description);
+                        setError("Dữ liệu tháng không hợp lệ từ thông tin đã lưu.");
+                        setMandalaDescription("Không thể tính H2 do dữ liệu tháng không hợp lệ.");
                     }
                 } else {
-                     setError("Dữ liệu tháng không hợp lệ.");
-                     setMandalaDescription("Dữ liệu tháng không hợp lệ.");
+                    console.warn("[H2] No 'userInfo' found in AsyncStorage.");
+                    setError("Không tìm thấy thông tin người dùng đã lưu.");
+                    setMandalaDescription("Vui lòng kiểm tra lại thông tin người dùng hoặc đăng nhập lại.");
                 }
             } catch (err: any) {
                 console.error("[H2] Error loading data:", err);
-                const errorMessage = err?.message || "Đã xảy ra lỗi không xác định.";
+                let errorMessage = "Đã xảy ra lỗi không xác định.";
+                 if (err instanceof SyntaxError) {
+                    errorMessage = "Lỗi định dạng dữ liệu người dùng đã lưu.";
+                } else if (err?.message) {
+                    errorMessage = err.message;
+                }
                 setError(errorMessage);
                 setMandalaDescription("Lỗi khi tải dữ liệu.");
                 Alert.alert("Lỗi H2", errorMessage);
+            } finally {
+                setLoading(false);
+                console.log("[H2] Loading finished.");
             }
-            finally { setLoading(false); console.log("[H2] Loading finished.");}
         };
         loadData();
     }, []);
 
-    const handleGoBack = () => { console.log('Go back pressed'); };
+    const handleGoBack = () => {
+        console.log('Go back pressed');
+        // Add navigation logic here (e.g., router.back() if using expo-router)
+    };
 
     // --- Render Logic ---
-     if (loading && !userData) {
-       return ( <View style={[styles.container, styles.centerContent]}><ImageBackground source={BACKGROUND_IMAGE} style={StyleSheet.absoluteFill} /><ActivityIndicator size="large" color="#ffffff" /><Text style={{ color: 'white', marginTop: 10 }}>Đang tải dữ liệu...</Text></View> );
+    if (loading && !userInfo) { // Changed from !userData to !userInfo
+        return (
+            <View style={[styles.container, styles.centerContent, { backgroundColor: '#2c3e50' /* Fallback background */}]}>
+                <ImageBackground source={BACKGROUND_IMAGE} style={StyleSheet.absoluteFill} />
+                <ActivityIndicator size="large" color="#ffffff" />
+                <Text style={{ color: 'white', marginTop: 10 }}>Đang tải dữ liệu...</Text>
+            </View>
+        );
     }
-     return (
-         <ImageBackground source={BACKGROUND_IMAGE} style={styles.background}>
-             <SafeAreaView style={styles.safeArea}>
-                 <StatusBar barStyle="light-content" />
-                 <View style={styles.header}>
-                     <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={28} color="white" /></TouchableOpacity>
-                     <View style={styles.titleContainer}><Text style={styles.title}>H2</Text></View>
-                     <View style={styles.backButtonPlaceholder} />
-                 </View>
-                 <View style={styles.content}>
-                     <View style={styles.circle}>
-                         {(loading && h2Number === null) ? (<ActivityIndicator size="small" color="#E6007E" />) : h2Number !== null ? (<Text style={styles.number}>{h2Number}</Text>) : (<Text style={styles.number}>-</Text>)}
-                     </View>
-                     <View style={styles.textBox}>
-                         <Text style={styles.descriptionText}>{loading ? "Đang tải mô tả..." : mandalaDescription ? mandalaDescription : error ? error : "Không có mô tả."}</Text>
-                     </View>
-                 </View>
-             </SafeAreaView>
-         </ImageBackground>
-     );
+
+    return (
+        <ImageBackground source={BACKGROUND_IMAGE} style={styles.background}>
+            <SafeAreaView style={styles.safeArea}>
+                <StatusBar barStyle="light-content" />
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={28} color="white" />
+                    </TouchableOpacity>
+                    <View style={styles.titleContainer}><Text style={styles.title}>H2</Text></View>
+                    <View style={styles.backButtonPlaceholder} />
+                </View>
+                <View style={styles.content}>
+                    <View style={styles.circle}>
+                        {/* Show small loading indicator if still loading (e.g. mandala desc) and h2Number isn't set yet, but userInfo IS loaded */}
+                        {(loading && h2Number === null && userInfo !== null) ? (
+                            <ActivityIndicator size="small" color="#E6007E" />
+                        ) : h2Number !== null ? (
+                            <Text style={styles.number}>{h2Number}</Text>
+                        ) : (
+                            // Display placeholder if number calculation failed or userInfo was missing for calculation
+                            <Text style={styles.number}>{userInfo === null && !loading ? "!" : "-"}</Text>
+                        )}
+                    </View>
+                    <View style={styles.textBox}>
+                        <Text style={styles.descriptionText}>
+                             {/* More nuanced conditional rendering for the description text */}
+                            {loading && !mandalaDescription ? // If loading and no description yet
+                                "Đang tải mô tả..." :
+                                mandalaDescription ? // If description is loaded and exists
+                                mandalaDescription :
+                                error && !mandalaDescription ? // If there was an overall error and no specific mandala description
+                                error : // Display the error message
+                                "Không có mô tả hoặc không thể tải." // Default if no description and no error message
+                            }
+                        </Text>
+                    </View>
+                </View>
+            </SafeAreaView>
+        </ImageBackground>
+    );
 }
