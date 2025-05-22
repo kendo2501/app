@@ -5,28 +5,26 @@ import {
     View,
     ImageBackground,
     TouchableOpacity,
-    StatusBar,
-    SafeAreaView,
     ActivityIndicator,
-    Alert
+    Alert,
+    ScrollView, // Thêm ScrollView
+    Dimensions,   // Thêm Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Added AsyncStorage
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Đảm bảo đường dẫn đúng
 
-const BACKGROUND_IMAGE = require('../../assets/images/background.jpg');
+const BACKGROUND_IMAGE = require('../../assets/images/background.jpg'); // Giữ nguyên
 
 // --- TypeScript Interface for UserInfo (H6 specific) ---
-// H6 Screen needs day and month for its calculation.
 interface UserInfo {
-  dd: number;
-  mm: number;
+    dd: number;
+    mm: number;
 }
 
-// --- Helper Functions ---
+const { width } = Dimensions.get('window'); // Thêm để style động giống H5Screen
 
-// Tính tổng các chữ số (Dùng cho H1 và rút gọn H6)
+// --- Helper Functions (Giữ nguyên logic H6 của bạn) ---
 const sumDigits = (num: number): number => {
     try {
         if (num < 0) {
@@ -42,7 +40,6 @@ const sumDigits = (num: number): number => {
     } catch (e) { console.error(`[sumDigits H6] Error for input ${num}:`, e); return 0; }
 };
 
-// H1 Ban đầu (Mới - dựa trên dd)
 const calculateH1InitialValue = (day: number | null | undefined): number | null => {
     if (day === null || day === undefined || typeof day !== 'number' || day <= 0 || day > 31) {
         console.warn(`[calculateH1InitialValue H6] Invalid day input: ${day}`);
@@ -52,7 +49,6 @@ const calculateH1InitialValue = (day: number | null | undefined): number | null 
     return sumDigits(day);
 };
 
-// H2 Ban đầu (Tháng hợp lệ)
 const calculateH2InitialValue = (monthInput: number | null | undefined): number | null => {
     if (monthInput === null || monthInput === undefined || typeof monthInput !== 'number' || monthInput < 1 || monthInput > 12) {
         console.warn(`[calculateH2InitialValue H6] Invalid month input: ${monthInput}`);
@@ -61,7 +57,6 @@ const calculateH2InitialValue = (monthInput: number | null | undefined): number 
     return monthInput;
 };
 
-// H6 Final (<=22)
 const getFinalH6Value = (day: number | null | undefined, month: number | null | undefined): number | null => {
     const resultH1 = calculateH1InitialValue(day);
     const resultH2 = calculateH2InitialValue(month);
@@ -80,32 +75,17 @@ const getFinalH6Value = (day: number | null | undefined, month: number | null | 
     console.log(`[getFinalH6Value H6] final H6: ${finalH6}`);
     return finalH6;
 };
-// --------------------
+// --- End of Helper Functions ---
 
-// --- Styles ---
-const styles = StyleSheet.create({
-    container: { flex: 1, },
-    absoluteFill: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, width: undefined, height: undefined, resizeMode: 'cover', },
-    centerContent: { justifyContent: 'center', alignItems: 'center', },
-    background: { flex: 1, },
-    safeArea: { flex: 1, },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingTop: 15, paddingBottom: 10, width: '100%', },
-    backButton: { padding: 5, },
-    backButtonPlaceholder: { width: 38, height: 38, },
-    titleContainer: { backgroundColor: 'white', paddingVertical: 8, paddingHorizontal: 30, borderRadius: 5, },
-    title: { fontSize: 18, fontWeight: 'bold', color: '#333', textAlign: 'center', },
-    content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, },
-    circle: { width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255, 255, 255, 0.9)', justifyContent: 'center', alignItems: 'center', marginBottom: 40, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5, },
-    number: { fontSize: 80, fontWeight: 'bold', color: '#E6007E', },
-    textBox: { backgroundColor: 'rgba(211, 211, 211, 0.85)', padding: 25, borderRadius: 10, width: '90%', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.41, elevation: 2, minHeight: 100, justifyContent: 'center', },
-    descriptionText: { fontSize: 16, color: '#333', textAlign: 'center', lineHeight: 24, },
-});
-// --- End of Styles ---
+// --- Interface cho Props (Thêm onBack) ---
+interface Props {
+    onBack: () => void;
+}
 
-// --- Component H6 ---
-export default function H6Screen() {
+// --- Component H6Screen (Sửa đổi để giống H5Screen) ---
+export default function H6Screen({ onBack }: Props) { // Thêm onBack vào props
     const [h6Number, setH6Number] = useState<number | null>(null);
-    const [userInfo, setUserInfo] = useState<UserInfo | null>(null); // Typed with H6-specific UserInfo
+    // Bỏ state userInfo riêng nếu không cần hiển thị gì đặc biệt từ nó ngoài việc tính toán
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -114,8 +94,7 @@ export default function H6Screen() {
         const loadData = async () => {
             setLoading(true);
             setError(null);
-            setUserInfo(null);
-            setH6Number(null);
+            setH6Number(null); // Reset các state khi load lại
             setMandalaDescription(null);
 
             try {
@@ -132,7 +111,6 @@ export default function H6Screen() {
                             dd: parsedFullUserInfo.dd,
                             mm: parsedFullUserInfo.mm,
                         };
-                        setUserInfo(componentSpecificUserInfo);
                         console.log("[H6Screen] Relevant user data for H6:", componentSpecificUserInfo);
 
                         const finalH6 = getFinalH6Value(
@@ -150,14 +128,15 @@ export default function H6Screen() {
                                 console.warn(`[H6Screen] No valid description found for H6=${finalH6}. API returned:`, description);
                             }
                         } else {
-                            setError("Lỗi tính toán H6 do dữ liệu ngày/tháng không hợp lệ sau khi kiểm tra.");
-                            setMandalaDescription("Lỗi tính toán H6.");
+                            // Lỗi này đã được console.error bên trong getFinalH6Value nếu có
+                            setError("Lỗi tính toán H6."); // Thông báo lỗi chung hơn
+                            setMandalaDescription("Lỗi tính toán H6 từ ngày và tháng cung cấp.");
                         }
                     } else {
                         console.warn("[H6Screen] dd or mm field is missing or not a number in stored userInfo.");
                         const missingFields = ['dd', 'mm'].filter(f => typeof parsedFullUserInfo[f] !== 'number').join(', ');
-                        setError(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu từ thông tin đã lưu.`);
-                        setMandalaDescription(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu.`);
+                        setError(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu.`);
+                        setMandalaDescription(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu từ thông tin đã lưu.`);
                     }
                 } else {
                     console.warn("[H6Screen] No 'userInfo' found in AsyncStorage.");
@@ -172,8 +151,8 @@ export default function H6Screen() {
                 } else if (err?.message) {
                     errorMessage = err.message;
                 }
-                setError(errorMessage);
-                setMandalaDescription("Lỗi khi tải dữ liệu.");
+                setError(errorMessage); // Set lỗi để có thể hiển thị nếu cần
+                setMandalaDescription("Lỗi khi tải dữ liệu."); // Cập nhật mandalaDescription để hiển thị lỗi
                 Alert.alert("Lỗi H6", errorMessage);
             } finally {
                 setLoading(false);
@@ -183,51 +162,115 @@ export default function H6Screen() {
         loadData();
     }, []);
 
-    const handleGoBack = () => { console.log('Go back pressed'); };
-
-    if (loading && !userInfo) {
-        return (
-            <View style={[styles.container, styles.centerContent, {backgroundColor: '#2c3e50'}]}>
-                <ImageBackground source={BACKGROUND_IMAGE} style={StyleSheet.absoluteFill} />
-                <ActivityIndicator size="large" color="#ffffff" />
-                <Text style={{ color: 'white', marginTop: 10 }}>Đang tải dữ liệu...</Text>
-            </View>
-        );
-    }
+    // Không cần hàm handleGoBack riêng nếu dùng onBack từ props
 
     return (
-        <ImageBackground source={BACKGROUND_IMAGE} style={styles.background}>
-            <SafeAreaView style={styles.safeArea}>
-                <StatusBar barStyle="light-content" />
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={28} color="white" /></TouchableOpacity>
-                    <View style={styles.titleContainer}><Text style={styles.title}>H6</Text></View>
-                    <View style={styles.backButtonPlaceholder} />
+        <ImageBackground source={BACKGROUND_IMAGE} style={styles.background} resizeMode="cover">
+            {/* Header chứa nút Back - Giống H5Screen */}
+            <View style={styles.header}>
+                <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={28} color="white" />
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+                {/* Title - Giống H5Screen */}
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>H6</Text> {/* Thay title thành H6 */}
                 </View>
-                <View style={styles.content}>
-                    <View style={styles.circle}>
-                        {(loading && h6Number === null && userInfo !== null) ? (
-                            <ActivityIndicator size="small" color="#E6007E" />
-                        ) : h6Number !== null ? (
-                            <Text style={styles.number}>{h6Number}</Text>
-                        ) : (
-                            <Text style={styles.number}>{userInfo === null && !loading ? "!" : "-"}</Text>
-                        )}
-                    </View>
-                    <View style={styles.textBox}>
-                        <Text style={styles.descriptionText}>
-                            {loading && !mandalaDescription ?
-                                "Đang tải mô tả..." :
-                                mandalaDescription ?
-                                mandalaDescription :
-                                error ?
-                                error :
-                                "Không có mô tả hoặc không thể tải."
-                            }
-                        </Text>
-                    </View>
+
+                {/* Number circle - Giống H5Screen */}
+                <View style={styles.circle}>
+                    {loading ? (
+                        <ActivityIndicator size="small" color="#E600E6" /> 
+                    ) : (
+                        <Text style={styles.number}>{h6Number ?? '-'}</Text>
+                    )}
                 </View>
-            </SafeAreaView>
+
+                {/* Description - Giống H5Screen */}
+                <View style={styles.textBox}>
+                    <Text style={styles.descriptionText}>
+                        {loading
+                            ? 'Đang tải mô tả...'
+                            : mandalaDescription || error /* Hiển thị error nếu có */ || 'Không có mô tả.'}
+                    </Text>
+                </View>
+            </ScrollView>
         </ImageBackground>
     );
 }
+
+// --- Styles (Áp dụng style của H5Screen) ---
+const styles = StyleSheet.create({
+    background: {
+        flex: 1,
+    },
+    header: { // Style header của H5Screen
+        position: 'absolute',
+        top: 40, // Điều chỉnh nếu cần cho SafeAreaView hoặc status bar ở app level
+        left: 20,
+        zIndex: 10,
+    },
+    backButton: { // Style backButton của H5Screen
+        padding: 8,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        borderRadius: 20,
+    },
+    scrollContainer: { // Style scrollContainer của H5Screen
+        flexGrow: 1,
+        paddingHorizontal: 20,
+        paddingTop: 100, // Đủ không gian cho header/nút back
+        paddingBottom: 100,
+        alignItems: 'center',
+    },
+    titleContainer: { // Style titleContainer của H5Screen
+        paddingVertical: 6,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginBottom: 20,
+        // backgroundColor: 'rgba(0,0,0,0.2)', // Tùy chọn nền cho title nếu muốn
+    },
+    title: { // Style title của H5Screen
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#FFFF00', // Màu vàng cho tiêu đề
+    },
+    circle: { // Style circle của H5Screen
+        width: width * 0.5,
+        height: width * 0.5,
+        borderRadius: (width * 0.5) / 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        // backgroundColor: 'rgba(255,255,255,0.1)', // Tùy chọn nền cho circle
+    },
+    number: { // Style number của H5Screen
+        fontSize: width * 0.2,
+        fontWeight: 'bold',
+        color: '#E600E6', // Màu tím cho số
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
+    },
+    textBox: { // Style textBox của H5Screen
+        marginTop: 30,
+        padding: 20,
+        borderRadius: 10,
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 120,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    descriptionText: { // Style descriptionText của H5Screen
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#FFFFFF',
+        textAlign: 'center',
+        lineHeight: 24,
+    },
+});

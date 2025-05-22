@@ -70,10 +70,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="form"
+        name="user"
         options={{
           title: 'User',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="heart.fill" color={color} />,
         }}
       />
     </Tabs>

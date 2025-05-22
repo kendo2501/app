@@ -9,10 +9,12 @@ import {
   ImageBackground,
   ActivityIndicator,
   Button,
-  Platform,
+  Platform, // Platform was imported but not used in the original snippet.
 } from 'react-native';
 
 // --- IMPORT MÀN HÌNH ---
+// Note: These files (main.number, birth.chart, etc.) are not defined in this snippet.
+// They are expected to be present in the '../../ui/' directory.
 import MainNumberScreen from '../../ui/main.number';
 import BirthChartScreen from '../../ui/birth.chart';
 import NameChartScreen from '../../ui/name.chart';
@@ -39,7 +41,7 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('home');
 
   const navigateTo = (screen: ActiveScreen) => setActiveScreen(screen);
-  const goBack = () => setActiveScreen('home');
+  const goBack = () => setActiveScreen('home'); // This is the goBack function
 
   const renderScreen = () => {
     if (activeScreen === 'home') {
@@ -47,7 +49,7 @@ export default function App() {
     }
 
     const screensMap: Record<ActiveScreen, React.ComponentType<any>> = {
-      home: () => null,
+      home: () => null, // Should not be reached if activeScreen === 'home' is handled above
       mainNumber: MainNumberScreen,
       birthChart: BirthChartScreen,
       nameChart: NameChartScreen,
@@ -60,15 +62,18 @@ export default function App() {
 
     const ScreenComponent = screensMap[activeScreen];
     if (ScreenComponent) {
+      // Each screen component receives 'goBack' as a prop
       return <ScreenComponent goBack={goBack} />;
     }
 
+    // Fallback if a screen component is missing
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Đang tải màn hình: {activeScreen}</Text>
         <Text style={styles.loadingInfo}>Chưa có component cho màn hình này</Text>
         <ActivityIndicator size="large" color="#FFF" />
         <View style={{ marginTop: 20 }}>
+          {/* Button to go back to home if a screen fails to load */}
           <Button title="Quay lại Home" onPress={goBack} />
         </View>
       </View>
@@ -84,21 +89,22 @@ export default function App() {
 }
 
 // --- HOME SCREEN ---
+// This component is part of App.js for simplicity in this example
 function HomeScreen({ navigateTo }: { navigateTo: (screen: ActiveScreen) => void }) {
   const buttons = [
-    { title: 'SỐ CHỦ ĐẠO', screen: 'mainNumber' },
-    { title: 'BIỂU ĐỒ NGÀY SINH', screen: 'birthChart' },
-    { title: 'BIỂU ĐỒ TÊN', screen: 'nameChart' },
-    { title: 'BIỂU ĐỒ TỔNG HỢP', screen: 'summaryChart' },
-    { title: 'MŨI TÊN XU HƯỚNG', screen: 'trendArrow' },
-    { title: 'CÁC ĐỈNH KIM TỰ', screen: 'pyramidNail' },
-    { title: 'PERSONAL YEAR', screen: 'personalYear' },
-{ title: 'MANDALA', screen: 'mandala' },
+    { title: 'SỐ CHỦ ĐẠO', screen: 'mainNumber' as ActiveScreen },
+    { title: 'BIỂU ĐỒ NGÀY SINH', screen: 'birthChart' as ActiveScreen },
+    { title: 'BIỂU ĐỒ TÊN', screen: 'nameChart' as ActiveScreen },
+    { title: 'BIỂU ĐỒ TỔNG HỢP', screen: 'summaryChart' as ActiveScreen },
+    { title: 'MŨI TÊN XU HƯỚNG', screen: 'trendArrow' as ActiveScreen },
+    { title: 'CÁC ĐỈNH KIM TỰ', screen: 'pyramidNail' as ActiveScreen },
+    { title: 'PERSONAL YEAR', screen: 'personalYear' as ActiveScreen },
+    { title: 'MANDALA', screen: 'mandala' as ActiveScreen },
   ];
 
   return (
     <ImageBackground
-      source={require('../../assets/images/background.jpg')}
+      source={require('../../assets/images/background.jpg')} // Ensure this path is correct
       style={styles.background}
       resizeMode="cover"
     >
@@ -109,7 +115,7 @@ function HomeScreen({ navigateTo }: { navigateTo: (screen: ActiveScreen) => void
               <TouchableOpacity
                 key={idx}
                 style={styles.button}
-                onPress={() => navigateTo(btn.screen as ActiveScreen)}
+                onPress={() => navigateTo(btn.screen)}
               >
                 <Text style={styles.buttonText}>{btn.title}</Text>
               </TouchableOpacity>
@@ -119,9 +125,9 @@ function HomeScreen({ navigateTo }: { navigateTo: (screen: ActiveScreen) => void
           <View style={styles.row}>
             {buttons.slice(3, 6).map((btn, idx) => (
               <TouchableOpacity
-                key={idx + 3}
+                key={idx + 3} // Ensure unique keys
                 style={styles.button}
-                onPress={() => navigateTo(btn.screen as ActiveScreen)}
+                onPress={() => navigateTo(btn.screen)}
               >
                 <Text style={styles.buttonText}>{btn.title}</Text>
               </TouchableOpacity>
@@ -129,11 +135,11 @@ function HomeScreen({ navigateTo }: { navigateTo: (screen: ActiveScreen) => void
           </View>
 
           <View style={[styles.row, { justifyContent: 'center' }]}>
-            {buttons.slice(6, 8).map((btn, idx) => (
+            {buttons.slice(6, 8).map((btn, idx) => ( // Slices up to (but not including) index 8
               <TouchableOpacity
-                key={idx + 6}
+                key={idx + 6} // Ensure unique keys
                 style={styles.button}
-                onPress={() => navigateTo(btn.screen as ActiveScreen)}
+                onPress={() => navigateTo(btn.screen)}
               >
                 <Text style={styles.buttonText}>{btn.title}</Text>
               </TouchableOpacity>
@@ -146,11 +152,10 @@ function HomeScreen({ navigateTo }: { navigateTo: (screen: ActiveScreen) => void
 }
 
 // --- STYLES ---
-// --- STYLES ---
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#000', // Or your app's default background
   },
   flexContainer: {
     flex: 1,
@@ -165,46 +170,48 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingVertical: 24, // Added some vertical padding
   },
   gridContainer: {
     width: '100%',
-    maxWidth: 400,
-    gap: 12,
+    maxWidth: 400, // Max width for the grid on larger screens
+    gap: 12, // Spacing between rows
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: 12,
+    justifyContent: 'space-around', // Distributes space for buttons in a row
+    alignItems: 'center', // Align items centrally in the row
+    flexWrap: 'wrap', // Allow wrapping if buttons don't fit
+    gap: 12, // Spacing between buttons in a row
   },
   button: {
     backgroundColor: '#FFF',
     paddingVertical: 12,
-    paddingHorizontal: 10,
+    paddingHorizontal: 10, // Adjusted for better text fit
     borderRadius: 12,
-    width: 100,
-    height: 100,
+    width: 100, // Fixed width
+    height: 100, // Fixed height
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
+    elevation: 3, // Android shadow
+    shadowColor: '#000', // iOS shadow
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
+    // marginBottom: 12, // If not using gap in row
   },
   buttonText: {
     fontWeight: 'bold',
     color: '#000',
     textAlign: 'center',
-    fontSize: 10,
+    fontSize: 14, // Keep small if titles are long
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#2c3e50',
+    backgroundColor: '#2c3e50', // A dark slate blue
   },
   loadingText: {
     fontSize: 18,
@@ -215,7 +222,8 @@ const styles = StyleSheet.create({
   },
   loadingInfo: {
     fontSize: 14,
-    color: '#bdc3c7',
+    color: '#bdc3c7', // A light grey
     textAlign: 'center',
     marginBottom: 20,
-  },});
+  },
+});

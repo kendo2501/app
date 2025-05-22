@@ -5,35 +5,31 @@ import {
     View,
     ImageBackground,
     TouchableOpacity,
-    StatusBar,
-    SafeAreaView,
     ActivityIndicator,
-    Alert
+    Alert,
+    ScrollView, // Thêm ScrollView
+    Dimensions,   // Thêm Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Added AsyncStorage
-// Removed: import { getUserById } from '../api/apiUser';
-import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Path from original snippet
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Đảm bảo đường dẫn đúng
 
-// --- Cấu hình ---
-// Removed: const USER_ID_TO_FETCH = 1;
-const BACKGROUND_IMAGE = require('../../assets/images/background.jpg'); // Path from original snippet
+const BACKGROUND_IMAGE = require('../../assets/images/background.jpg');
 
 // --- TypeScript Interface for UserInfo (H10 specific) ---
-// H10 Screen needs day, month, and year for its calculation (via H9, H7, H6).
 interface UserInfo {
-  dd: number;
-  mm: number;
-  yyyy: number;
+    dd: number;
+    mm: number;
+    yyyy: number;
 }
 
-// --- Helper Functions ---
+const { width } = Dimensions.get('window');
 
-// Tính tổng các chữ số
+// --- Helper Functions (Giữ nguyên logic H10 của bạn) ---
 const sumDigits = (num: number): number => {
     try {
         if (num < 0) {
-            console.warn(`[sumDigits H10] Input is negative (${num}), returning 0.`);
+            // console.warn(`[sumDigits H10] Input is negative (${num}), returning 0.`); // Giảm console log
             return 0;
         }
         return String(num)
@@ -42,42 +38,29 @@ const sumDigits = (num: number): number => {
                 const digitNum = parseInt(digit, 10);
                 return s + (isNaN(digitNum) ? 0 : digitNum);
             }, 0);
-    } catch (e) { console.error(`[sumDigits H10] Error for input ${num}:`, e); return 0; }
+    } catch (e) { 
+        // console.error(`[sumDigits H10] Error for input ${num}:`, e); // Giảm console log
+        return 0; 
+    }
 };
 
-// H1 Ban đầu
 const calculateH1InitialValue = (day: number | null | undefined): number | null => {
-    if (day === null || day === undefined || typeof day !== 'number' || day <= 0 || day > 31) {
-        // console.warn(`[calculateH1InitialValue H10] Invalid day input: ${day}`); // Reduce noise
-        return null;
-    }
+    if (day === null || day === undefined || typeof day !== 'number' || day <= 0 || day > 31) return null;
     if (day <= 22) return day;
     return sumDigits(day);
 };
 
-// H2 Ban đầu
 const calculateH2InitialValue = (monthInput: number | null | undefined): number | null => {
-    if (monthInput === null || monthInput === undefined || typeof monthInput !== 'number' || monthInput < 1 || monthInput > 12) {
-        // console.warn(`[calculateH2InitialValue H10] Invalid month input: ${monthInput}`); // Reduce noise
-        return null;
-    }
+    if (monthInput === null || monthInput === undefined || typeof monthInput !== 'number' || monthInput < 1 || monthInput > 12) return null;
     return monthInput;
 };
 
-// H3 Ban đầu
 const calculateH3InitialValue = (year: number | null | undefined): number | null => {
-    if (year === null || year === undefined || typeof year !== 'number' || year <= 0) {
-        // console.warn(`[calculateH3InitialValue H10] Invalid year input: ${year}`); // Reduce noise
-        return null;
-    }
+    if (year === null || year === undefined || typeof year !== 'number' || year <= 0) return null;
     try { return sumDigits(year); }
-    catch (e) {
-        // console.error(`[calculateH3InitialValue H10] Error summing digits for year ${year}:`, e); // Reduce noise
-        return null;
-    }
+    catch (e) { return null; }
 };
 
-// H6 Final (<=22)
 const getFinalH6Value = (day: number | null | undefined, month: number | null | undefined): number | null => {
     const resultH1 = calculateH1InitialValue(day);
     const resultH2 = calculateH2InitialValue(month);
@@ -87,7 +70,6 @@ const getFinalH6Value = (day: number | null | undefined, month: number | null | 
     return finalH6;
 };
 
-// H7 Final (<=22)
 const getFinalH7Value = (month: number | null | undefined, year: number | null | undefined): number | null => {
     const resultH2 = calculateH2InitialValue(month);
     const resultH3 = calculateH3InitialValue(year);
@@ -98,22 +80,15 @@ const getFinalH7Value = (month: number | null | undefined, year: number | null |
     return finalH7;
 };
 
-// H9 Final (<=22)
 const getFinalH9Value = (day: number | null | undefined, month: number | null | undefined, year: number | null | undefined): number | null => {
     const finalH6Result = getFinalH6Value(day, month);
     const finalH7Result = getFinalH7Value(month, year);
-    if (finalH6Result === null || finalH7Result === null) {
-        // console.error(`[getFinalH9Value H10] Null intermediate H6 or H7: H6f=${finalH6Result}, H7f=${finalH7Result}`); // Reduce noise
-        return null;
-    }
+    if (finalH6Result === null || finalH7Result === null) return null;
     let finalH9 = finalH6Result + finalH7Result;
-    // console.log(`[getFinalH9Value H10] H9 Initial sum (H6f + H7f): ${finalH6Result}+${finalH7Result} = ${finalH9}`); // Reduce noise
     while (finalH9 > 22) {
-        // const prevSum = finalH9; // Reduce noise
         finalH9 = sumDigits(finalH9);
-        // console.log(`[getFinalH9Value H10] Reducing H9 sum ${prevSum} -> ${finalH9}`); // Reduce noise
     }
-    console.log(`[getFinalH9Value H10] Final H9 for H10 calculation: ${finalH9}`);
+    // console.log(`[getFinalH9Value H10] Final H9 for H10 calculation: ${finalH9}`); // Giữ lại nếu cần debug
     return finalH9;
 };
 
@@ -124,38 +99,20 @@ const getFinalH10Value = (day: number | null | undefined, month: number | null |
         console.error("[getFinalH10Value H10] Failed because H9 is null.");
         return null;
     }
-    // H10 can be 0 or negative if H9 is 22 or greater (though H9 is capped at 22)
-    // If H9 = 22, H10 = 0. If H9 = 1, H10 = 21.
     const finalH10 = 22 - finalH9Result;
     console.log(`[getFinalH10Value H10] Calculated H10 (22 - H9=${finalH9Result}): ${finalH10}`);
     return finalH10; // Trả về trực tiếp, không rút gọn
 };
-// --------------------
+// --- End of Helper Functions ---
 
-// --- Styles ---
-const styles = StyleSheet.create({
-    container: { flex: 1, },
-    absoluteFill: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, width: undefined, height: undefined, resizeMode: 'cover', },
-    centerContent: { justifyContent: 'center', alignItems: 'center', },
-    background: { flex: 1, },
-    safeArea: { flex: 1, },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingTop: 15, paddingBottom: 10, width: '100%', },
-    backButton: { padding: 5, },
-    backButtonPlaceholder: { width: 38, height: 38, },
-    titleContainer: { backgroundColor: 'white', paddingVertical: 8, paddingHorizontal: 30, borderRadius: 5, },
-    title: { fontSize: 18, fontWeight: 'bold', color: '#333', textAlign: 'center', },
-    content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, },
-    circle: { width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255, 255, 255, 0.9)', justifyContent: 'center', alignItems: 'center', marginBottom: 40, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5, },
-    number: { fontSize: 80, fontWeight: 'bold', color: '#E6007E', },
-    textBox: { backgroundColor: 'rgba(211, 211, 211, 0.85)', padding: 25, borderRadius: 10, width: '90%', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.41, elevation: 2, minHeight: 100, justifyContent: 'center', },
-    descriptionText: { fontSize: 16, color: '#333', textAlign: 'center', lineHeight: 24, },
-});
-// --- End of Styles ---
+// --- Interface cho Props (Thêm onBack) ---
+interface Props {
+    onBack: () => void;
+}
 
-// --- Component H10 ---
-export default function H10Screen() {
+// --- Component H10Screen (Sửa đổi để giống H5Screen) ---
+export default function H10Screen({ onBack }: Props) {
     const [h10Number, setH10Number] = useState<number | null>(null);
-    const [userInfo, setUserInfo] = useState<UserInfo | null>(null); // Typed with H10-specific UserInfo
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -164,12 +121,11 @@ export default function H10Screen() {
         const loadData = async () => {
             setLoading(true);
             setError(null);
-            setUserInfo(null);
             setH10Number(null);
             setMandalaDescription(null);
 
             try {
-                console.log("[H10Screen] Fetching user data from AsyncStorage key: 'userInfo'");
+                // console.log("[H10Screen] Fetching user data from AsyncStorage key: 'userInfo'"); // Giảm console log
                 const storedUserInfo = await AsyncStorage.getItem('userInfo');
 
                 if (storedUserInfo) {
@@ -184,8 +140,7 @@ export default function H10Screen() {
                             mm: parsedFullUserInfo.mm,
                             yyyy: parsedFullUserInfo.yyyy,
                         };
-                        setUserInfo(componentSpecificUserInfo);
-                        console.log("[H10Screen] Relevant user data for H10:", componentSpecificUserInfo);
+                        // console.log("[H10Screen] Relevant user data for H10:", componentSpecificUserInfo); // Giảm console log
 
                         const finalH10 = getFinalH10Value(
                             componentSpecificUserInfo.dd,
@@ -195,33 +150,31 @@ export default function H10Screen() {
                         setH10Number(finalH10);
 
                         if (finalH10 !== null) {
-                            // H10 can be 0 or other numbers not typically found in standard mandala descriptions (1-22).
-                            // Consider how searchMandalaInfoByNumber handles numbers like 0, or values > 22 or < 1.
-                            console.log(`[H10Screen] Attempting to fetch description for H10 = ${finalH10}`);
+                            // console.log(`[H10Screen] Attempting to fetch description for H10 = ${finalH10}`); // Giảm console log
                             const description = await searchMandalaInfoByNumber(finalH10);
                             if (typeof description === 'string' && description.trim().length > 0) {
                                 setMandalaDescription(description);
                             } else {
                                 setMandalaDescription(`Không tìm thấy mô tả cho số H10: ${finalH10}.`);
-                                console.warn(`[H10Screen] No valid description found for H10=${finalH10}. API returned:`, description);
+                                // console.warn(`[H10Screen] No valid description found for H10=${finalH10}. API returned:`, description); // Giảm console log
                             }
                         } else {
-                            setError("Lỗi tính toán H10 (do lỗi tính H9 hoặc dữ liệu không hợp lệ).");
-                            setMandalaDescription("Lỗi tính toán H10.");
+                            setError("Lỗi tính toán H10.");
+                            setMandalaDescription("Lỗi tính toán H10 từ ngày, tháng và năm cung cấp.");
                         }
                     } else {
-                        console.warn("[H10Screen] dd, mm, or yyyy field is missing or not a number in stored userInfo.");
+                        // console.warn("[H10Screen] dd, mm, or yyyy field is missing or not a number in stored userInfo."); // Giảm console log
                         const missingFields = ['dd', 'mm', 'yyyy'].filter(f => typeof parsedFullUserInfo[f] !== 'number').join(', ');
-                        setError(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu từ thông tin đã lưu.`);
-                        setMandalaDescription(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu.`);
+                        setError(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu.`);
+                        setMandalaDescription(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu từ thông tin đã lưu.`);
                     }
                 } else {
-                    console.warn("[H10Screen] No 'userInfo' found in AsyncStorage.");
+                    // console.warn("[H10Screen] No 'userInfo' found in AsyncStorage."); // Giảm console log
                     setError("Không tìm thấy thông tin người dùng đã lưu.");
                     setMandalaDescription("Vui lòng kiểm tra lại thông tin người dùng hoặc đăng nhập lại.");
                 }
             } catch (err: any) {
-                console.error("[H10Screen] Error during loadData:", err);
+                // console.error("[H10Screen] Error during loadData:", err); // Giảm console log
                 let errorMessage = "Đã xảy ra lỗi không xác định.";
                 if (err instanceof SyntaxError) {
                     errorMessage = "Lỗi định dạng dữ liệu người dùng đã lưu.";
@@ -233,57 +186,117 @@ export default function H10Screen() {
                 Alert.alert("Lỗi H10", errorMessage);
             } finally {
                 setLoading(false);
-                console.log("[H10Screen] Loading finished.");
+                // console.log("[H10Screen] Loading finished."); // Giảm console log
             }
         };
         loadData();
     }, []);
 
-    const handleGoBack = () => { console.log('Go back pressed'); };
-
-    if (loading && !userInfo) {
-        return (
-            <View style={[styles.container, styles.centerContent, {backgroundColor: '#2c3e50'}]}>
-                <ImageBackground source={BACKGROUND_IMAGE} style={StyleSheet.absoluteFill} />
-                <ActivityIndicator size="large" color="#ffffff" />
-                <Text style={{ color: 'white', marginTop: 10 }}>Đang tải dữ liệu...</Text>
-            </View>
-        );
-    }
-
     return (
-        <ImageBackground source={BACKGROUND_IMAGE} style={styles.background}>
-            <SafeAreaView style={styles.safeArea}>
-                <StatusBar barStyle="light-content" />
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={28} color="white" /></TouchableOpacity>
-                    <View style={styles.titleContainer}><Text style={styles.title}>H10</Text></View>
-                    <View style={styles.backButtonPlaceholder} />
+        <ImageBackground source={BACKGROUND_IMAGE} style={styles.background} resizeMode="cover">
+            {/* Header chứa nút Back - Giống H5Screen */}
+            <View style={styles.header}>
+                <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={28} color="white" />
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+                {/* Title - Giống H5Screen */}
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>H10</Text> {/* Thay title thành H10 */}
                 </View>
-                <View style={styles.content}>
-                    <View style={styles.circle}>
-                        {(loading && h10Number === null && userInfo !== null) ? (
-                            <ActivityIndicator size="small" color="#E6007E" />
-                        ) : h10Number !== null ? (
-                            <Text style={styles.number}>{h10Number}</Text>
-                        ) : (
-                            <Text style={styles.number}>{userInfo === null && !loading ? "!" : "-"}</Text>
-                        )}
-                    </View>
-                    <View style={styles.textBox}>
-                        <Text style={styles.descriptionText}>
-                            {loading && !mandalaDescription ?
-                                "Đang tải mô tả..." :
-                                mandalaDescription ?
-                                mandalaDescription :
-                                error ?
-                                error : // Display the specific error message
-                                "Không có mô tả hoặc không thể tải."
-                            }
-                        </Text>
-                    </View>
+
+                {/* Number circle - Giống H5Screen */}
+                <View style={styles.circle}>
+                    {loading ? (
+                        <ActivityIndicator size="small" color="#E600E6" />
+                    ) : (
+                        <Text style={styles.number}>{h10Number ?? '-'}</Text>
+                    )}
                 </View>
-            </SafeAreaView>
+
+                {/* Description - Giống H5Screen */}
+                <View style={styles.textBox}>
+                    <Text style={styles.descriptionText}>
+                        {loading
+                            ? 'Đang tải mô tả...'
+                            : mandalaDescription || error || 'Không có mô tả.'}
+                    </Text>
+                </View>
+            </ScrollView>
         </ImageBackground>
     );
 }
+
+// --- Styles (Áp dụng style của H5Screen) ---
+const styles = StyleSheet.create({
+    background: {
+        flex: 1,
+    },
+    header: {
+        position: 'absolute',
+        top: 40,
+        left: 20,
+        zIndex: 10,
+    },
+    backButton: {
+        padding: 8,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        borderRadius: 20,
+    },
+    scrollContainer: {
+        flexGrow: 1,
+        paddingHorizontal: 20,
+        paddingTop: 100,
+        paddingBottom: 100,
+        alignItems: 'center',
+    },
+    titleContainer: {
+        paddingVertical: 6,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginBottom: 20,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#FFFF00',
+    },
+    circle: {
+        width: width * 0.5,
+        height: width * 0.5,
+        borderRadius: (width * 0.5) / 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+    },
+    number: {
+        fontSize: width * 0.2,
+        fontWeight: 'bold',
+        color: '#E600E6',
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
+    },
+    textBox: {
+        marginTop: 30,
+        padding: 20,
+        borderRadius: 10,
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 120,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    descriptionText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#FFFFFF',
+        textAlign: 'center',
+        lineHeight: 24,
+    },
+});

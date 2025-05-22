@@ -5,28 +5,26 @@ import {
     View,
     ImageBackground,
     TouchableOpacity,
-    StatusBar,
-    SafeAreaView,
     ActivityIndicator,
-    Alert
+    Alert,
+    ScrollView, // Thêm ScrollView
+    Dimensions,   // Thêm Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Added AsyncStorage
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // Đảm bảo đường dẫn đúng
 
-const BACKGROUND_IMAGE = require('../../assets/images/background.jpg');
+const BACKGROUND_IMAGE = require('../../assets/images/background.jpg'); // Giữ nguyên
 
 // --- TypeScript Interface for UserInfo (H7 specific) ---
-// H7 Screen needs month and year for its calculation.
 interface UserInfo {
-  mm: number;
-  yyyy: number;
+    mm: number;
+    yyyy: number;
 }
 
-// --- Helper Functions ---
+const { width } = Dimensions.get('window'); // Thêm để style động giống H5Screen
 
-// Tính tổng các chữ số (Dùng cho H3 và rút gọn H7)
+// --- Helper Functions (Giữ nguyên logic H7 của bạn) ---
 const sumDigits = (num: number): number => {
     try {
         if (num < 0) {
@@ -42,9 +40,7 @@ const sumDigits = (num: number): number => {
     } catch (e) { console.error(`[sumDigits H7] Error for input ${num}:`, e); return 0; }
 };
 
-// H2 Ban đầu (Tháng hợp lệ)
 const calculateH2InitialValue = (monthInput: number | null | undefined): number | null => {
-    // Expects monthInput to be a number from UserInfo
     if (monthInput === null || monthInput === undefined || typeof monthInput !== 'number' || monthInput < 1 || monthInput > 12) {
         console.warn(`[calculateH2InitialValue H7] Invalid month input: ${monthInput}`);
         return null;
@@ -52,7 +48,6 @@ const calculateH2InitialValue = (monthInput: number | null | undefined): number 
     return monthInput;
 };
 
-// H3 Ban đầu (Cũ - dựa trên Vishal - sum of year digits)
 const calculateH3InitialValue = (year: number | null | undefined): number | null => {
     if (year === null || year === undefined || typeof year !== 'number' || year <= 0) {
         console.warn(`[calculateH3InitialValue H7] Invalid year input: ${year}`);
@@ -65,7 +60,6 @@ const calculateH3InitialValue = (year: number | null | undefined): number | null
     }
 };
 
-// H7 Final (<=22)
 const getFinalH7Value = (month: number | null | undefined, year: number | null | undefined): number | null => {
     const resultH2 = calculateH2InitialValue(month);
     const resultH3 = calculateH3InitialValue(year);
@@ -86,32 +80,16 @@ const getFinalH7Value = (month: number | null | undefined, year: number | null |
     console.log(`[getFinalH7Value H7] final H7: ${finalH7}`);
     return finalH7;
 };
-// --------------------
+// --- End of Helper Functions ---
 
-// --- Styles ---
-const styles = StyleSheet.create({
-    container: { flex: 1, },
-    absoluteFill: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, width: undefined, height: undefined, resizeMode: 'cover', },
-    centerContent: { justifyContent: 'center', alignItems: 'center', },
-    background: { flex: 1, },
-    safeArea: { flex: 1, },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingTop: 15, paddingBottom: 10, width: '100%', },
-    backButton: { padding: 5, },
-    backButtonPlaceholder: { width: 38, height: 38, },
-    titleContainer: { backgroundColor: 'white', paddingVertical: 8, paddingHorizontal: 30, borderRadius: 5, },
-    title: { fontSize: 18, fontWeight: 'bold', color: '#333', textAlign: 'center', },
-    content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, },
-    circle: { width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255, 255, 255, 0.9)', justifyContent: 'center', alignItems: 'center', marginBottom: 40, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5, },
-    number: { fontSize: 80, fontWeight: 'bold', color: '#E6007E', },
-    textBox: { backgroundColor: 'rgba(211, 211, 211, 0.85)', padding: 25, borderRadius: 10, width: '90%', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.41, elevation: 2, minHeight: 100, justifyContent: 'center', },
-    descriptionText: { fontSize: 16, color: '#333', textAlign: 'center', lineHeight: 24, },
-});
-// --- End of Styles ---
+// --- Interface cho Props (Thêm onBack) ---
+interface Props {
+    onBack: () => void;
+}
 
-// --- Component H7 ---
-export default function H7Screen() {
+// --- Component H7Screen (Sửa đổi để giống H5Screen) ---
+export default function H7Screen({ onBack }: Props) { // Thêm onBack vào props
     const [h7Number, setH7Number] = useState<number | null>(null);
-    const [userInfo, setUserInfo] = useState<UserInfo | null>(null); // Typed with H7-specific UserInfo
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -120,8 +98,7 @@ export default function H7Screen() {
         const loadData = async () => {
             setLoading(true);
             setError(null);
-            setUserInfo(null);
-            setH7Number(null);
+            setH7Number(null); 
             setMandalaDescription(null);
 
             try {
@@ -138,7 +115,6 @@ export default function H7Screen() {
                             mm: parsedFullUserInfo.mm,
                             yyyy: parsedFullUserInfo.yyyy,
                         };
-                        setUserInfo(componentSpecificUserInfo);
                         console.log("[H7Screen] Relevant user data for H7:", componentSpecificUserInfo);
 
                         const finalH7 = getFinalH7Value(
@@ -156,14 +132,14 @@ export default function H7Screen() {
                                 console.warn(`[H7Screen] No valid description found for H7=${finalH7}. API returned:`, description);
                             }
                         } else {
-                            setError("Lỗi tính toán H7 do dữ liệu tháng/năm không hợp lệ sau khi kiểm tra.");
-                            setMandalaDescription("Lỗi tính toán H7.");
+                            setError("Lỗi tính toán H7.");
+                            setMandalaDescription("Lỗi tính toán H7 từ tháng và năm cung cấp.");
                         }
                     } else {
                         console.warn("[H7Screen] mm or yyyy field is missing or not a number in stored userInfo.");
                         const missingFields = ['mm', 'yyyy'].filter(f => typeof parsedFullUserInfo[f] !== 'number').join(', ');
-                        setError(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu từ thông tin đã lưu.`);
-                        setMandalaDescription(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu.`);
+                        setError(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu.`);
+                        setMandalaDescription(`Dữ liệu (${missingFields}) không hợp lệ hoặc bị thiếu từ thông tin đã lưu.`);
                     }
                 } else {
                     console.warn("[H7Screen] No 'userInfo' found in AsyncStorage.");
@@ -189,51 +165,111 @@ export default function H7Screen() {
         loadData();
     }, []);
 
-    const handleGoBack = () => { console.log('Go back pressed'); };
-
-    if (loading && !userInfo) {
-        return (
-            <View style={[styles.container, styles.centerContent, {backgroundColor: '#2c3e50'}]}>
-                <ImageBackground source={BACKGROUND_IMAGE} style={StyleSheet.absoluteFill} />
-                <ActivityIndicator size="large" color="#ffffff" />
-                <Text style={{ color: 'white', marginTop: 10 }}>Đang tải dữ liệu...</Text>
-            </View>
-        );
-    }
-
     return (
-        <ImageBackground source={BACKGROUND_IMAGE} style={styles.background}>
-            <SafeAreaView style={styles.safeArea}>
-                <StatusBar barStyle="light-content" />
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={handleGoBack} style={styles.backButton}><Ionicons name="arrow-back" size={28} color="white" /></TouchableOpacity>
-                    <View style={styles.titleContainer}><Text style={styles.title}>H7</Text></View>
-                    <View style={styles.backButtonPlaceholder} />
+        <ImageBackground source={BACKGROUND_IMAGE} style={styles.background} resizeMode="cover">
+            {/* Header chứa nút Back - Giống H5Screen */}
+            <View style={styles.header}>
+                <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={28} color="white" />
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+                {/* Title - Giống H5Screen */}
+                <View style={styles.titleContainer}>
+                    <Text style={styles.title}>H7</Text> {/* Thay title thành H7 */}
                 </View>
-                <View style={styles.content}>
-                    <View style={styles.circle}>
-                        {(loading && h7Number === null && userInfo !== null) ? (
-                            <ActivityIndicator size="small" color="#E6007E" />
-                        ) : h7Number !== null ? (
-                            <Text style={styles.number}>{h7Number}</Text>
-                        ) : (
-                            <Text style={styles.number}>{userInfo === null && !loading ? "!" : "-"}</Text>
-                        )}
-                    </View>
-                    <View style={styles.textBox}>
-                        <Text style={styles.descriptionText}>
-                            {loading && !mandalaDescription ?
-                                "Đang tải mô tả..." :
-                                mandalaDescription ?
-                                mandalaDescription :
-                                error ?
-                                error :
-                                "Không có mô tả hoặc không thể tải."
-                            }
-                        </Text>
-                    </View>
+
+                {/* Number circle - Giống H5Screen */}
+                <View style={styles.circle}>
+                    {loading ? (
+                        <ActivityIndicator size="small" color="#E600E6" /> 
+                    ) : (
+                        <Text style={styles.number}>{h7Number ?? '-'}</Text>
+                    )}
                 </View>
-            </SafeAreaView>
+
+                {/* Description - Giống H5Screen */}
+                <View style={styles.textBox}>
+                    <Text style={styles.descriptionText}>
+                        {loading
+                            ? 'Đang tải mô tả...'
+                            : mandalaDescription || error || 'Không có mô tả.'}
+                    </Text>
+                </View>
+            </ScrollView>
         </ImageBackground>
     );
 }
+
+// --- Styles (Áp dụng style của H5Screen) ---
+const styles = StyleSheet.create({
+    background: {
+        flex: 1,
+    },
+    header: { 
+        position: 'absolute',
+        top: 40, 
+        left: 20,
+        zIndex: 10,
+    },
+    backButton: { 
+        padding: 8,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        borderRadius: 20,
+    },
+    scrollContainer: { 
+        flexGrow: 1,
+        paddingHorizontal: 20,
+        paddingTop: 100, 
+        paddingBottom: 100,
+        alignItems: 'center',
+    },
+    titleContainer: { 
+        paddingVertical: 6,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginBottom: 20,
+    },
+    title: { 
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#FFFF00', 
+    },
+    circle: { 
+        width: width * 0.5,
+        height: width * 0.5,
+        borderRadius: (width * 0.5) / 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+    },
+    number: { 
+        fontSize: width * 0.2,
+        fontWeight: 'bold',
+        color: '#E600E6', 
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
+    },
+    textBox: { 
+        marginTop: 30,
+        padding: 20,
+        borderRadius: 10,
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 120,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    descriptionText: { 
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#FFFFFF',
+        textAlign: 'center',
+        lineHeight: 24,
+    },
+});
