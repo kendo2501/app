@@ -7,10 +7,10 @@ import {
     TouchableOpacity,
     SafeAreaView,
     StatusBar,
-    // Platform, // No longer needed for this specific positioning
+    // Image, // No longer needed
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Ionicons'; // Assuming Ionicons has a home icon
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 
 // --- IMPORT CÁC COMPONENT CHI TIẾT MANDALA ---
 import H1 from '../ui/C_F_ofMandala/H1';
@@ -122,11 +122,8 @@ const MandalaScreen: React.FC<MandalaScreenProps> = ({ goBack }) => {
         >
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
             <SafeAreaView style={styles.safeArea}>
-                {/* NÚT HOME ĐÃ CẬP NHẬT */}
-                <TouchableOpacity style={styles.topRightHomeButton} onPress={goBack} activeOpacity={0.7}>
-                    {/* Thay 'arrow-back' bằng tên icon home phù hợp, ví dụ 'home-outline' hoặc 'home' */}
-                    <Icon name="home-outline" size={28} color="#FFFFFF" />
-                </TouchableOpacity>
+
+
 
                 <View style={styles.container}>
                     {selectedMandalaId === null ? renderGridView() : renderDetailContent()}
@@ -142,22 +139,12 @@ const styles = StyleSheet.create({
     },
     safeArea: {
         flex: 1,
-        // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, // Optional: for Android status bar handling
     },
-    topRightHomeButton: { // Đã cập nhật style cho nút Home
-        position: 'absolute',
-        top: 40, // Điều chỉnh nếu cần
-        right: 20, // Chuyển sang phải
-        padding: 8,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        borderRadius: 20,
-        zIndex: 10, // Đảm bảo nút hiển thị trên các element khác
-    },
+    // homeIconImage style không còn cần thiết nếu dùng Icon component
     container: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        // paddingTop: 80, // Có thể cần nếu nội dung bị che, nhưng với absolute positioning của nút thì thường không cần
     },
     gridContainer: {
         width: '100%',
