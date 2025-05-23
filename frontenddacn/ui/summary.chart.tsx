@@ -1,6 +1,6 @@
 import { calculateCombinedMap } from '@/untils/calculatorsumary';
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ImageBackground } from 'react-native';
 
 interface Props {
   fullName: string;
@@ -15,7 +15,6 @@ const layout = [
   [1, 4, 7],
 ];
 
-
 export default function CombinedChartScreen({ fullName, day, month, year }: Props) {
   const [combinedMap, setCombinedMap] = useState<{ [key: number]: string }>({});
 
@@ -25,20 +24,17 @@ export default function CombinedChartScreen({ fullName, day, month, year }: Prop
     console.log('Combined Map:', map);
   }, [fullName, day, month, year]);
 
-
   function getPresentNumbers(map: { [key: number]: string }) {
     return Object.keys(map)
       .filter(key => map[Number(key)] !== '')
       .map(Number);
   }
-  
+
   useEffect(() => {
     const present = getPresentNumbers(combinedMap);
     console.log('Các số xuất hiện:', present);
   }, [combinedMap]);
-  
 
-  
   const renderCell = (num: number) => (
     <View key={num} style={styles.cell}>
       <Text style={styles.cellText}>{combinedMap[num]}</Text>
@@ -46,36 +42,49 @@ export default function CombinedChartScreen({ fullName, day, month, year }: Prop
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>BIỂU ĐỒ TỔNG HỢP</Text>
-      <Text style={styles.subTitle}>Họ tên: {fullName}</Text>
-      <Text style={styles.subTitle}>Ngày sinh: {day}/{month}/{year}</Text>
+    <ImageBackground
+      source={require('./../assets/images/background.jpg')}
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>BIỂU ĐỒ TỔNG HỢP</Text>
+        <Text style={styles.subTitle}>Họ tên: {fullName}</Text>
+        <Text style={styles.subTitle}>Ngày sinh: {day}/{month}/{year}</Text>
 
-      <View style={styles.chart}>
-        {layout.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map(renderCell)}
-          </View>
-        ))}
-      </View>
-    </ScrollView>
+        <View style={styles.chart}>
+          {layout.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.row}>
+              {row.map(renderCell)}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     padding: 20,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent', // Cho phép hiển thị nền
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#fff', // chữ trắng dễ đọc trên nền
   },
   subTitle: {
     fontSize: 14,
     marginBottom: 4,
+    color: '#fff',
   },
   chart: {
     marginTop: 20,
@@ -87,13 +96,15 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     margin: 3,
+    backgroundColor: 'rgba(255,255,255,0.1)', // ô mờ để thấy background
   },
   cellText: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#fff',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -9,8 +9,8 @@ import {
   ImageBackground,
   ActivityIndicator,
   Button,
-  Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- IMPORT MÀN HÌNH ---
 import MainNumberScreen from '../../ui/main.number';
@@ -34,18 +34,65 @@ export type ActiveScreen =
   | 'personalYear'
   | 'mandala';
 
+type UserInfo = {
+  dd: number;
+  mm: number;
+  yyyy: number;
+  fullName: string;
+};
+
 // --- APP ---
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('home');
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   const navigateTo = (screen: ActiveScreen) => setActiveScreen(screen);
   const goBack = () => setActiveScreen('home');
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('userInfo');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setUserInfo(parsed);
+        }
+      } catch (error) {
+        console.error('Lỗi khi đọc userInfo:', error);
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   const renderScreen = () => {
     if (activeScreen === 'home') {
       return <HomeScreen navigateTo={navigateTo} />;
     }
 
+    // TRUYỀN DỮ LIỆU userInfo CHO MÀN HÌNH CẦN
+    if (userInfo) {
+      const commonProps = {
+        day: userInfo.dd,
+        month: userInfo.mm,
+        year: userInfo.yyyy,
+        fullName: userInfo.fullName,
+        goBack,
+      };
+
+      switch (activeScreen) {
+        case 'birthChart':
+          return <BirthChartScreen {...commonProps} />;
+        case 'nameChart':
+          return <NameChartScreen {...commonProps} />;
+        case 'summaryChart':
+          return <SummaryChartScreen {...commonProps} />;
+        case 'trendArrow':
+          return <TrendArrowScreen {...commonProps} />;
+        // Thêm các màn khác nếu cần truyền ngày sinh
+      }
+    }
+
+    // CÁC MÀN KHÔNG CẦN TRUYỀN NGÀY SINH
     const screensMap: Record<ActiveScreen, React.ComponentType<any>> = {
       home: () => null,
       mainNumber: MainNumberScreen,
@@ -93,7 +140,7 @@ function HomeScreen({ navigateTo }: { navigateTo: (screen: ActiveScreen) => void
     { title: 'MŨI TÊN XU HƯỚNG', screen: 'trendArrow' },
     { title: 'CÁC ĐỈNH KIM TỰ', screen: 'pyramidNail' },
     { title: 'PERSONAL YEAR', screen: 'personalYear' },
-{ title: 'MANDALA', screen: 'mandala' },
+    { title: 'MANDALA', screen: 'mandala' },
   ];
 
   return (
@@ -146,7 +193,6 @@ function HomeScreen({ navigateTo }: { navigateTo: (screen: ActiveScreen) => void
 }
 
 // --- STYLES ---
-// --- STYLES ---
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -197,7 +243,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     textAlign: 'center',
-    fontSize: 10,
+    fontSize: 15,
   },
   loadingContainer: {
     flex: 1,
@@ -218,4 +264,5 @@ const styles = StyleSheet.create({
     color: '#bdc3c7',
     textAlign: 'center',
     marginBottom: 20,
-  },});
+  },
+});

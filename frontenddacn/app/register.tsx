@@ -165,7 +165,7 @@ const RegisterScreen = () => {
               <Picker.Item label="Ngày sinh" value="" />
               {Array.from({ length: 31 }, (_, i) => (
                 <Picker.Item key={i + 1} label={`${i + 1}`} value={`${i + 1}`} />
-              ))}
+              ))} 
             </Picker>
           </View>
           <View style={styles.datePicker}>
@@ -178,7 +178,7 @@ const RegisterScreen = () => {
           </View>
           <TextInput
             style={[styles.inputYYYY, { flex: 1, marginLeft: 6 }]}
-            placeholder="Năm"
+            placeholder="Năm Sinh"
             placeholderTextColor="#FFFFFF"
             value={yyyy}
             onChangeText={setYyyy}
@@ -224,34 +224,42 @@ input: {
   borderRadius: 8,
   marginBottom: 12,
   paddingLeft: 8,
+  marginLeft:12,
+  marginRight:12,
   backgroundColor: 'rgba(255, 255, 255, 0.1)', // input mờ nhẹ
   color: '#FFFFFF',
+  width: '90%',
+  alignSelf: 'center',
 },
   dateRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 12,
+    width: '90%',
+    // marginLeft: 12,
+    alignSelf: 'center',
   },
   datePicker: {
     flex: 1,
     height: 50,
-    width: 1500,
+    width: 150,
     borderColor: '#888',
     borderWidth: 1,
     borderRadius: 8,
     paddingLeft: 1,
+    marginRight: 10,
+    
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     color: '#FFFFFF',
     justifyContent: 'center',
   },
  picker: {
   height: 60,
-  width: 1500,
+  width: 100,
   color: '#FFFFFF',
 },
 inputYYYY: {
-  height: 50,
-  width: 1500,
+  height: 'auto',
   color: '#FFFFFF',
   borderColor: '#888',
   borderWidth: 1,
@@ -266,6 +274,8 @@ button: {
   borderRadius: 6,
   alignItems: 'center',
   marginTop: 10,
+  width: '90%',
+  alignSelf: 'center',
 },
 
   buttonText: {

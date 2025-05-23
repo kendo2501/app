@@ -34,7 +34,7 @@ export default function TrendScreen({ fullName, day, month, year }: Props) {
   useEffect(() => {
     const fetchDescriptions = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/arrows');
+        const response = await axios.get('http://localhost:3002/api/arrows');
         console.log('API response:', response.data);
         const mergedDescriptions = response.data;
         setArrowDescriptions(mergedDescriptions);
