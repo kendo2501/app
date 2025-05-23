@@ -40,3 +40,14 @@ exports.register = (req, res) => {
     });
   });
 };
+
+exports.get = (req, res) => {
+  User.getAllUsers((err, results) => {
+    if (err) {
+      res.json({ success: false, message: 'Lỗi khi lấy danh sách người dùng' });
+      return;
+    }
+
+    res.json({ success: true, data: results });
+  });
+};

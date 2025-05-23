@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ImageBackground } from 'react-native';
-
-interface Props {
-  fullName: string;
-}
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const layout = [
   [3, 6, 9],
@@ -11,7 +8,6 @@ const layout = [
   [1, 4, 7]
 ];
 
-// Bảng chữ cái → số
 const letterToNumberMap: { [key: string]: number } = {
   A: 1, J: 1, S: 1,
   B: 2, K: 2, T: 2,
@@ -24,27 +20,41 @@ const letterToNumberMap: { [key: string]: number } = {
   I: 9, R: 9,
 };
 
-export default function NameChartScreen({ fullName }: Props) {
+export default function NameChartScreen() {
   const [chartMap, setChartMap] = useState<{ [key: number]: string }>({});
+  const [fullName, setFullName] = useState<string>('Đang tải...');
 
   useEffect(() => {
-    const nameUpper = fullName.toUpperCase().replace(/[^A-Z]/g, '');
-    const numbers: number[] = [];
+    const fetchUserInfo = async () => {
+      const stored = await AsyncStorage.getItem('userInfo');
+      if (stored) {
+        const user = JSON.parse(stored);
+        setFullName(user.fullName || 'Không rõ');
+        generateChart(user.fullName || '');
+      }
+    };
 
-    for (const char of nameUpper) {
-      const num = letterToNumberMap[char];
-      if (num) numbers.push(num);
-    }
+    const generateChart = (name: string) => {
+      const nameUpper = name.toUpperCase().replace(/[^A-Z]/g, '');
+      const numbers: number[] = [];
 
-    const map: { [key: number]: string } = {};
-    for (let i = 1; i <= 9; i++) map[i] = '';
+      for (const char of nameUpper) {
+        const num = letterToNumberMap[char];
+        if (num) numbers.push(num);
+      }
 
-    numbers.forEach(num => {
-      map[num] += num;
-    });
+      const map: { [key: number]: string } = {};
+      for (let i = 1; i <= 9; i++) map[i] = '';
 
-    setChartMap(map);
-  }, [fullName]);
+      numbers.forEach(num => {
+        map[num] += num;
+      });
+
+      setChartMap(map);
+    };
+
+    fetchUserInfo();
+  }, []);
 
   return (
     <ImageBackground
@@ -82,18 +92,18 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     alignItems: 'center',
-    backgroundColor: 'transparent', // Cho phép hiển thị ảnh nền
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#fff', // Cho dễ đọc trên nền
+    color: '#fff',
   },
   subTitle: {
     fontSize: 14,
     marginBottom: 5,
-    color: '#fff', // Cho dễ đọc
+    color: '#fff',
   },
   chart: {
     marginTop: 20,
@@ -109,7 +119,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     margin: 2,
-    backgroundColor: 'rgba(255,255,255,0.1)', // Nền ô mờ để vẫn thấy background
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   cellText: {
     fontSize: 18,

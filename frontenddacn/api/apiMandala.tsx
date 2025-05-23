@@ -1,69 +1,86 @@
 // api/mandalaService.js
 
-// Define the Base URL directly in this file
-const API_BASE_URL = 'http://192.168.10.7:3001'; // Your specific IP and Port
+// Define the API Base URL directly in this file
+// !!! QUAN TRỌNG: Hãy thay thế 'http://your-specific-ip:your-port' bằng IP và Port API thực tế của bạn !!!
+import { BASE_URL } from '@/untils/url';
 
-// Function to search Mandala info (information) by number
+// Lưu ý: Dòng sau đây có vấn đề và đã được xóa:
+// const response = await fetch(`${BASE_URL}`) // Your specific IP and Port
+// `await` không thể được sử dụng ở cấp cao nhất của một module theo cách này
+// và BASE_URL chưa được định nghĩa. Giả định API_BASE_URL là những gì cần thiết.
+
+// Hàm tìm kiếm thông tin Mandala theo số
 export const searchMandalaInfoByNumber = async (number) => {
-    // Validate input number
-    if (number === null || number === undefined) {
-        console.warn("[MandalaService] Search cancelled: Invalid number provided.");
-        return null; // Return null or a specific message object/string
+    // Xác thực số đầu vào
+    if (number === null || number === undefined || String(number).trim() === "") {
+        console.warn("[MandalaService] Tìm kiếm bị hủy: Số cung cấp không hợp lệ.");
+        return null; // Trả về null hoặc một đối tượng/chuỗi thông báo cụ thể
     }
 
-    console.log(`[MandalaService] Searching Mandala info (database) for number: ${number}`);
+    console.log(`[MandalaService] Đang tìm kiếm thông tin Mandala (database) cho số: ${number}`);
     try {
-        // --- Corrected Line: Use API_BASE_URL ---
-        // Construct the API endpoint URL using the defined API_BASE_URL
-        const searchEndpoint = `${API_BASE_URL}/mysql/search?number=${number}`;
-        // -----------------------------------------
+        // Xây dựng URL điểm cuối API bằng API_BASE_URL đã định nghĩa
+        // Sử dụng encodeURIComponent để đảm bảo an toàn cho các ký tự đặc biệt trong URL
+        const searchEndpoint = `${BASE_URL}/mysql/search?number=${encodeURIComponent(number)}`;
 
-        console.log(`[MandalaService] Calling API: ${searchEndpoint}`);
+        console.log(`[MandalaService] Đang gọi API: ${searchEndpoint}`);
 
         const response = await fetch(searchEndpoint);
 
-        // Check if the request was successful
+        // Kiểm tra xem yêu cầu có thành công không
         if (!response.ok) {
             let errorBody = null;
             const errorContentType = response.headers.get("content-type");
-            // Try to parse error response as JSON or Text
+
+            // Cố gắng phân tích phản hồi lỗi dưới dạng JSON hoặc Text
             if (errorContentType && errorContentType.indexOf("application/json") !== -1) {
-                 try { errorBody = await response.json(); } catch (e) { console.error("Failed to parse JSON error body:", e)/* ignore parsing error */ }
+                try { errorBody = await response.json(); } catch (e) { console.error("[MandalaService] Không thể phân tích nội dung lỗi JSON:", e); /* bỏ qua lỗi phân tích */ }
             } else {
-                try { errorBody = await response.text(); } catch(e) { console.error("Failed to parse Text error body:", e) /* ignore text error */}
+                try { errorBody = await response.text(); } catch (e) { console.error("[MandalaService] Không thể phân tích nội dung lỗi Text:", e); /* bỏ qua lỗi phân tích text */ }
             }
-            console.error("[MandalaService] API Error Response Status:", response.status);
-            console.error("[MandalaService] API Error Response Body:", errorBody);
-            // Throw a detailed error including status and body if available
-            throw new Error(`Lỗi API ${response.status}: ${errorBody?.error || (typeof errorBody === 'string' ? errorBody : 'Không thể tìm thông tin.')}`);
+
+            console.error("[MandalaService] Trạng thái Phản hồi Lỗi API:", response.status);
+            console.error("[MandalaService] Nội dung Phản hồi Lỗi API:", errorBody);
+
+            // Ném ra một lỗi chi tiết bao gồm trạng thái và nội dung nếu có
+            const errorMessage = errorBody?.error || (typeof errorBody === 'string' && errorBody.trim() !== '' ? errorBody : `Không thể tìm thông tin cho số ${number}.`);
+            throw new Error(`Lỗi API ${response.status}: ${errorMessage}`);
         }
 
-        // Parse the successful JSON response
-        const data = await response.json(); // Expecting array like: [{ id, number, information, ... }]
-        console.log("[MandalaService] Mandala search result from DB:", data);
+        // Phân tích phản hồi JSON thành công
+        // Mong đợi mảng dạng: [{ id, number, information, ... }]
+        const data = await response.json();
+        console.log("[MandalaService] Kết quả tìm kiếm Mandala từ DB:", data);
 
-        // --- IMPORTANT: Check and adjust the field name if necessary ---
-        // Assuming the field containing the description is named 'information'
-        const descriptionField = 'information'; // <--- CHANGE 'information' if your field name is different
+        // --- QUAN TRỌNG: Kiểm tra và điều chỉnh tên trường nếu cần ---
+        // Giả sử trường chứa mô tả có tên là 'information'
+        const descriptionField = 'information'; // <--- THAY ĐỔI 'information' nếu tên trường của bạn khác
 
-        // Check if data is an array, has items, and the first item has the required field
+        // Kiểm tra xem data có phải là mảng, có phần tử, và phần tử đầu tiên có trường yêu cầu không
         if (Array.isArray(data) && data.length > 0 && data[0] && data[0][descriptionField] !== undefined) {
-            // Return the description text
+            // Trả về nội dung mô tả
             return data[0][descriptionField];
         } else {
-            // Handle cases where data is empty, not an array, or the field doesn't exist
-            console.log(`[MandalaService] No valid '${descriptionField}' found in DB response for number:`, number);
-            // Return a user-friendly message indicating data wasn't found
+            // Xử lý trường hợp dữ liệu trống, không phải là mảng, hoặc trường không tồn tại
+            console.log(`[MandalaService] Không tìm thấy '${descriptionField}' hợp lệ trong phản hồi DB cho số:`, number);
+            // Trả về một thông báo thân thiện với người dùng cho biết dữ liệu không được tìm thấy
             return `Không tìm thấy thông tin trong database cho số ${number}.`;
         }
 
     } catch (error) {
-        // Log the specific error encountered during the fetch or processing
-        console.error("[MandalaService] Error searching Mandala info in DB:", error);
-        // Rethrow or wrap the error for the calling component to handle
-        // Provide a user-friendly message, preserving API error details if available
-        throw new Error(error.message.startsWith('Lỗi API') ? error.message : "Không thể tìm kiếm thông tin Mandala. Vui lòng thử lại.");
+        // Ghi lại lỗi cụ thể gặp phải trong quá trình fetch hoặc xử lý
+        console.error("[MandalaService] Lỗi khi tìm kiếm thông tin Mandala trong DB:", error);
+
+        // Ném lại hoặc gói lỗi để thành phần gọi xử lý
+        // Cung cấp một thông báo thân thiện với người dùng, giữ lại chi tiết lỗi API nếu có
+        if (error.message && error.message.startsWith('Lỗi API')) {
+            throw error; // Ném lại lỗi API đã được định dạng
+        } else if (error instanceof TypeError && error.message === "Failed to fetch") { // Lỗi mạng
+             throw new Error("Lỗi mạng hoặc không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối và thử lại.");
+        } else {
+            // Đối với các lỗi khác, cung cấp một thông báo chung hơn
+            throw new Error("Không thể tìm kiếm thông tin Mandala. Vui lòng thử lại sau.");
+        }
     }
 };
 
-// Add other mandala-related API functions here if needed

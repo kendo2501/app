@@ -1,13 +1,7 @@
 import { calculateCombinedMap } from '@/untils/calculatorsumary';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ImageBackground } from 'react-native';
-
-interface Props {
-  fullName: string;
-  day: number;
-  month: number;
-  year: number;
-}
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const layout = [
   [3, 6, 9],
@@ -15,20 +9,35 @@ const layout = [
   [1, 4, 7],
 ];
 
-export default function CombinedChartScreen({ fullName, day, month, year }: Props) {
+export default function CombinedChartScreen() {
+  const [userInfo, setUserInfo] = useState<{
+    fullName: string;
+    dd: number;
+    mm: number;
+    yyyy: number;
+  } | null>(null);
+
   const [combinedMap, setCombinedMap] = useState<{ [key: number]: string }>({});
 
   useEffect(() => {
-    const map = calculateCombinedMap(fullName, day, month, year);
-    setCombinedMap(map);
-    console.log('Combined Map:', map);
-  }, [fullName, day, month, year]);
+    const fetchUserInfoAndCalculate = async () => {
+      const stored = await AsyncStorage.getItem('userInfo');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setUserInfo(parsed);
+        const map = calculateCombinedMap(parsed.fullName, parsed.dd, parsed.mm, parsed.yyyy);
+        setCombinedMap(map);
+        console.log('Combined Map:', map);
+      }
+    };
 
-  function getPresentNumbers(map: { [key: number]: string }) {
-    return Object.keys(map)
+    fetchUserInfoAndCalculate();
+  }, []);
+
+  const getPresentNumbers = (map: { [key: number]: string }) =>
+    Object.keys(map)
       .filter(key => map[Number(key)] !== '')
       .map(Number);
-  }
 
   useEffect(() => {
     const present = getPresentNumbers(combinedMap);
@@ -41,6 +50,20 @@ export default function CombinedChartScreen({ fullName, day, month, year }: Prop
     </View>
   );
 
+  if (!userInfo) {
+    return (
+      <ImageBackground
+        source={require('./../assets/images/background.jpg')}
+        style={styles.background}
+        resizeMode="cover"
+      >
+        <View style={styles.container}>
+          <Text style={styles.title}>Đang tải dữ liệu...</Text>
+        </View>
+      </ImageBackground>
+    );
+  }
+
   return (
     <ImageBackground
       source={require('./../assets/images/background.jpg')}
@@ -49,8 +72,10 @@ export default function CombinedChartScreen({ fullName, day, month, year }: Prop
     >
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>BIỂU ĐỒ TỔNG HỢP</Text>
-        <Text style={styles.subTitle}>Họ tên: {fullName}</Text>
-        <Text style={styles.subTitle}>Ngày sinh: {day}/{month}/{year}</Text>
+        <Text style={styles.subTitle}>Họ tên: {userInfo.fullName}</Text>
+        <Text style={styles.subTitle}>
+          Ngày sinh: {userInfo.dd}/{userInfo.mm}/{userInfo.yyyy}
+        </Text>
 
         <View style={styles.chart}>
           {layout.map((row, rowIndex) => (
@@ -73,13 +98,13 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     alignItems: 'center',
-    backgroundColor: 'transparent', // Cho phép hiển thị nền
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#fff', // chữ trắng dễ đọc trên nền
+    color: '#fff',
   },
   subTitle: {
     fontSize: 14,
@@ -100,7 +125,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     margin: 3,
-    backgroundColor: 'rgba(255,255,255,0.1)', // ô mờ để thấy background
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   cellText: {
     fontSize: 18,

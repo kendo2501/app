@@ -5,13 +5,7 @@ import {
   StyleSheet,
   ImageBackground,
 } from 'react-native';
-
-interface Props {
-  day: number;
-  month: number;
-  year: number;
-  goBack: () => void;
-}
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const layout = [
   [3, 6, 9],
@@ -19,18 +13,34 @@ const layout = [
   [1, 4, 7],
 ];
 
-export default function BirthChartScreen({ day, month, year, goBack }: Props) {
+export default function BirthChartScreen() {
   const [dobMap, setDobMap] = useState<{ [key: number]: string }>({});
+  const [birthDate, setBirthDate] = useState<{
+    day: number;
+    month: number;
+    year: number;
+  } | null>(null);
 
   useEffect(() => {
-    const allDigits = `${day}${month}${year}`.split('').map(Number);
-    const map: { [key: number]: string } = {};
-    for (let i = 1; i <= 9; i++) map[i] = '';
-    allDigits.forEach(d => {
-      if (d !== 0) map[d] += d;
-    });
-    setDobMap(map);
-  }, [day, month, year]);
+    const fetchUserInfo = async () => {
+      const stored = await AsyncStorage.getItem('userInfo');
+      if (stored) {
+        const user = JSON.parse(stored);
+        const { dd, mm, yyyy } = user;
+        setBirthDate({ day: dd, month: mm, year: yyyy });
+
+        const allDigits = `${dd}${mm}${yyyy}`.split('').map(Number);
+        const map: { [key: number]: string } = {};
+        for (let i = 1; i <= 9; i++) map[i] = '';
+        allDigits.forEach(d => {
+          if (d !== 0) map[d] += d;
+        });
+        setDobMap(map);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
 
   const renderCell = (num: number) => (
     <View key={num} style={styles.cell}>
@@ -40,17 +50,22 @@ export default function BirthChartScreen({ day, month, year, goBack }: Props) {
 
   return (
     <ImageBackground
-      source={require('./../assets/images/background.jpg')} // sửa nếu cần theo đúng đường dẫn
+      source={require('./../assets/images/background.jpg')}
       style={styles.background}
       resizeMode="cover"
     >
       <View style={styles.overlay}>
         <Text style={styles.title}>BIỂU ĐỒ NGÀY SINH</Text>
-        <Text style={styles.subtitle}>
-          Ngày sinh: {`${day.toString().padStart(2, '0')}/${month
-            .toString()
-            .padStart(2, '0')}/${year}`}
-        </Text>
+        {birthDate ? (
+          <Text style={styles.subtitle}>
+            Ngày sinh: {`${birthDate.day.toString().padStart(2, '0')}/${birthDate.month
+              .toString()
+              .padStart(2, '0')}/${birthDate.year}`}
+          </Text>
+        ) : (
+          <Text style={styles.subtitle}>Đang tải ngày sinh...</Text>
+        )}
+
         <View style={styles.chart}>
           {layout.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.row}>
@@ -74,7 +89,7 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)', // để text dễ đọc hơn trên nền
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   title: {
     fontSize: 22,

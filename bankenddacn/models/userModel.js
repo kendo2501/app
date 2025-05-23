@@ -1,22 +1,30 @@
-const db = require('../config/db');
+const { pool } = require('../config/db2');
 
+// Kiểu callback
 const findUserByUsername = (username, callback) => {
   const query = 'SELECT * FROM information WHERE user = ?';
-  db.query(query, [username], callback);
+  pool.query(query, [username], callback);
 };
-
 const findUserByCredentials = (user, pass, callback) => {
   const query = 'SELECT * FROM information WHERE user = ? AND pass = ?';
-  db.query(query, [user, pass], callback);
+  pool.query(query, [user, pass], callback);
 };
 
 const createUser = (user, pass, fullName, dd, mm, yyyy, callback) => {
   const query = 'INSERT INTO information (user, pass, fullName, dd, mm, yyyy) VALUES (?, ?, ?, ?, ?, ?)';
-  db.query(query, [user, pass, fullName, dd, mm, yyyy], callback);
+  pool.query(query, [user, pass, fullName, dd, mm, yyyy], callback);
+};
+
+
+// callback-style getAllUsers
+const getAllUsers = (callback) => {
+  const query = 'SELECT * FROM information'; // <--- ĐÃ SỬA TÊN BẢNG
+  pool.query(query, callback);
 };
 
 module.exports = {
   findUserByUsername,
   findUserByCredentials,
-  createUser
+  createUser,
+  getAllUsers,
 };

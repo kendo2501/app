@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  ImageBackground,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { calculateCombinedMap } from '@/untils/calculatorsumary';
-import { ImageBackground } from 'react-native'; // nhớ import nếu chưa có
 
 type ArrowData = {
-  arrow: string;       // VD: "3-5-7"
-  advantage: string;   // VD: "TÂM LINH"
-  defect: string;    // VD: "TÍNH CÁCH" 
+  arrow: string;
+  advantage: string;
+  defect: string;
 };
 
 type Trend = {
@@ -16,29 +23,43 @@ type Trend = {
   status: 'mũi tên mạnh' | 'mũi tên trống';
 };
 
-interface Props {
-  fullName: string;
-  day: number;
-  month: number;
-  year: number;
-}
-
-export default function TrendScreen({ fullName, day, month, year }: Props) {
+export default function TrendScreen() {
   const navigation = useNavigation();
-  const route = useRoute<any>();
-
   const [trendData, setTrendData] = useState<Trend[]>([]);
   const [arrowDescriptions, setArrowDescriptions] = useState<ArrowData[]>([]);
   const [combinedMap, setCombinedMap] = useState<{ [key: number]: string }>({});
+  const [userInfo, setUserInfo] = useState<{
+    fullName: string;
+    dd: number;
+    mm: number;
+    yyyy: number;
+  } | null>(null);
 
+  // Lấy thông tin người dùng từ AsyncStorage
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const stored = await AsyncStorage.getItem('userInfo');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setUserInfo(parsed);
+
+        const map = calculateCombinedMap(parsed.fullName, parsed.dd, parsed.mm, parsed.yyyy);
+        setCombinedMap(map);
+
+        const numbersPresent = getPresentNumbersFromMap(map);
+        const trends = detectTrend(numbersPresent);
+        setTrendData(trends);
+      }
+    };
+    fetchUserInfo();
+  }, []);
+
+  // Gọi API lấy mô tả mũi tên
   useEffect(() => {
     const fetchDescriptions = async () => {
       try {
-        const response = await axios.get('http://localhost:3002/api/arrows');
-        console.log('API response:', response.data);
-        const mergedDescriptions = response.data;
-        setArrowDescriptions(mergedDescriptions);
-        console.log('Merged descriptions:', mergedDescriptions);
+        const response = await axios.get('http://localhost:3000/mongo/api/arrows');
+        setArrowDescriptions(response.data);
       } catch (error) {
         console.error('Lỗi khi gọi API:', error);
       }
@@ -66,11 +87,9 @@ export default function TrendScreen({ fullName, day, month, year }: Props) {
     ];
 
     const trends: Trend[] = [];
-    console.log('Trend data:', trends);
-
     arrows.forEach((arrow) => {
-      const hasAll = arrow.every(num => numbers.includes(num));// MŨi tên Mạnh
-      const hasNone = arrow.every(num => !numbers.includes(num));// MŨi tên trống
+      const hasAll = arrow.every(num => numbers.includes(num));
+      const hasNone = arrow.every(num => !numbers.includes(num));
       if (hasAll) {
         trends.push({ arrow, status: 'mũi tên mạnh' });
       } else if (hasNone) {
@@ -84,31 +103,10 @@ export default function TrendScreen({ fullName, day, month, year }: Props) {
   const getDescription = (arrow: number[], status: string): string => {
     const arrowStr = arrow.join('-');
     const match = arrowDescriptions.find(desc => desc.arrow === arrowStr);
-    console.log('arrowDescriptions:', arrowDescriptions);
-    
-    if (!match) {
-      return `${arrowStr}: mũi tên không rõ`;
-    }
-  
+    if (!match) return `${arrowStr}: mũi tên không rõ`;
     const type = status === 'mũi tên mạnh' ? match.advantage : match.defect;
-    
-    if (typeof type !== 'string') {
-      return `${arrowStr}: mũi tên không rõ`;
-    }
-    
-    return `${arrowStr}: mũi tên ${type.toLowerCase()}`;    
+    return `${arrowStr}: mũi tên ${type.toLowerCase()}`;
   };
-  
-  
-
-  useEffect(() => {
-    const map = calculateCombinedMap(fullName, day, month, year);
-    setCombinedMap(map);
-
-    const numbersPresent = getPresentNumbersFromMap(map);
-    const trends = detectTrend(numbersPresent);
-    setTrendData(trends);
-  }, [fullName, day, month, year]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -142,7 +140,6 @@ export default function TrendScreen({ fullName, day, month, year }: Props) {
       </ImageBackground>
     </View>
   );
-  
 }
 
 const styles = StyleSheet.create({
@@ -152,9 +149,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     paddingBottom: 100,
-  },
-  container: {
-    flex: 1, // nếu vẫn dùng container
   },
   header: {
     fontWeight: 'bold',
@@ -166,7 +160,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 14,
-    color: 'white', // phải đổi sang trắng hoặc sáng để nổi bật
+    color: 'white',
     textAlign: 'center',
     marginTop: 4,
   },

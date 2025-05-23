@@ -8,6 +8,8 @@ import {
   ImageBackground,
   Platform,
   KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
@@ -30,7 +32,7 @@ const RegisterScreen = () => {
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToastMessage(message);
     setToastType(type);
-    setTimeout(() => setToastMessage(''), 3000); // ẩn sau 3 giây
+    setTimeout(() => setToastMessage(''), 3000);
   };
 
   const isValidDate = (day: string, month: string, year: string) => {
@@ -39,7 +41,6 @@ const RegisterScreen = () => {
       y = parseInt(year, 10);
 
     if (isNaN(d) || isNaN(m) || isNaN(y)) return false;
-
     if (y < 1900 || y > new Date().getFullYear()) return false;
 
     const date = new Date(`${y}-${m}-${d}`);
@@ -120,120 +121,121 @@ const RegisterScreen = () => {
   };
 
   return (
-    <ImageBackground
-      source={require('../assets/images/backgound(login).jpg')}
-      style={styles.background}
-      resizeMode="cover"
-    >
-      <KeyboardAvoidingView behavior="padding">
-        <Text style={styles.header}>Đăng ký</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <ImageBackground
+        source={require('../assets/images/backgound(login).jpg')}
+        style={styles.background}
+        resizeMode="cover"
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+          style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20 }}
+        >
+          <Text style={styles.header}>Đăng ký</Text>
 
-        {toastMessage ? (
-          <View style={[styles.toast, toastType === 'success' ? styles.toastSuccess : styles.toastError]}>
-            <Text style={styles.toastText}>{toastMessage}</Text>
-          </View>
-        ) : null}
+          {toastMessage ? (
+            <View style={[styles.toast, toastType === 'success' ? styles.toastSuccess : styles.toastError]}>
+              <Text style={styles.toastText}>{toastMessage}</Text>
+            </View>
+          ) : null}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Tên người dùng"
-          placeholderTextColor="#FFFFFF"
-          value={user}
-          onChangeText={setUser}
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Mật khẩu"
-          placeholderTextColor="#FFFFFF"
-          value={pass}
-          onChangeText={setPass}
-          secureTextEntry
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Họ và tên (không dấu)"
-          placeholderTextColor="#FFFFFF"
-          value={fullName}
-          onChangeText={setFullName}
-        />
-
-        {/* Dòng ngày/tháng/năm */}
-        <View style={styles.dateRow}>
-          <View style={styles.datePicker}>
-            <Picker selectedValue={dd} onValueChange={setDd} style={styles.picker}>
-              <Picker.Item label="Ngày sinh" value="" />
-              {Array.from({ length: 31 }, (_, i) => (
-                <Picker.Item key={i + 1} label={`${i + 1}`} value={`${i + 1}`} />
-              ))} 
-            </Picker>
-          </View>
-          <View style={styles.datePicker}>
-            <Picker selectedValue={mm} onValueChange={setMm} style={styles.picker}>
-              <Picker.Item label="Tháng sinh" value="" />
-              {Array.from({ length: 12 }, (_, i) => (
-                <Picker.Item key={i + 1} label={`${i + 1}`} value={`${i + 1}`} />
-              ))}
-            </Picker>
-          </View>
           <TextInput
-            style={[styles.inputYYYY, { flex: 1, marginLeft: 6 }]}
-            placeholder="Năm Sinh"
+            style={styles.input}
+            placeholder="Tên người dùng"
             placeholderTextColor="#FFFFFF"
-            value={yyyy}
-            onChangeText={setYyyy}
-            keyboardType="numeric"
-            maxLength={4}
+            value={user}
+            onChangeText={setUser}
+            autoCapitalize="none"
           />
-        </View>
+          <TextInput
+            style={styles.input}
+            placeholder="Mật khẩu"
+            placeholderTextColor="#FFFFFF"
+            value={pass}
+            onChangeText={setPass}
+            secureTextEntry
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Họ và tên (không dấu)"
+            placeholderTextColor="#FFFFFF"
+            value={fullName}
+            onChangeText={setFullName}
+          />
 
-        <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? 'Đang xử lý...' : 'Đăng ký'}</Text>
-        </TouchableOpacity>
+          <View style={styles.dateRow}>
+            <View style={styles.datePicker}>
+              <Picker selectedValue={dd} onValueChange={setDd} style={styles.picker}>
+                <Picker.Item label="Ngày sinh" value="" />
+                {Array.from({ length: 31 }, (_, i) => (
+                  <Picker.Item key={i + 1} label={`${i + 1}`} value={`${i + 1}`} />
+                ))}
+              </Picker>
+            </View>
 
-        <TouchableOpacity style={styles.linkButton} onPress={() => router.replace('/login')}>
-          <Text style={styles.linkButtonText}>Đã có tài khoản? Đăng nhập ngay</Text>
-        </TouchableOpacity>
-      </KeyboardAvoidingView>
-    </ImageBackground>
+            <View style={styles.datePicker}>
+              <Picker selectedValue={mm} onValueChange={setMm} style={styles.picker}>
+                <Picker.Item label="Tháng sinh" value="" />
+                {Array.from({ length: 12 }, (_, i) => (
+                  <Picker.Item key={i + 1} label={`${i + 1}`} value={`${i + 1}`} />
+                ))}
+              </Picker>
+            </View>
+
+            <TextInput
+              style={styles.inputYYYY}
+              placeholder="Năm"
+              placeholderTextColor="#FFFFFF"
+              value={yyyy}
+              onChangeText={setYyyy}
+              keyboardType="numeric"
+              maxLength={4}
+            />
+          </View>
+
+          <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
+            <Text style={styles.buttonText}>{loading ? 'Đang xử lý...' : 'Đăng ký'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.linkButton} onPress={() => router.replace('/login')}>
+            <Text style={styles.linkButtonText}>Đã có tài khoản? Đăng nhập ngay</Text>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </ImageBackground>
+    </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    justifyContent: 'center',
   },
   header: {
-  fontSize: 28,
-  fontWeight: 'bold',
-  marginBottom: 20,
-  textAlign: 'center',
-  color: '#FFFFFF',
-},
-
-toastText: {
-  textAlign: 'center',
-  color: '#FFFFFF',
-},
-
-input: {
-  height: 40,
-  borderColor: '#888',
-  borderWidth: 1,
-  borderRadius: 8,
-  marginBottom: 12,
-  paddingLeft: 8,
-  marginLeft:12,
-  marginRight:12,
-  backgroundColor: 'rgba(255, 255, 255, 0.1)', // input mờ nhẹ
-  color: '#FFFFFF',
-  width: '90%',
-  alignSelf: 'center',
-},
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#FFFFFF',
+    marginBottom: 20,
+  },
+  toastText: {
+    textAlign: 'center',
+    color: '#FFFFFF',
+  },
+  input: {
+    height: 40,
+    borderColor: '#888',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 12,
+    paddingLeft: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    color: '#FFFFFF',
+  },
   dateRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 8,
     marginBottom: 12,
     width: '90%',
     // marginLeft: 12,
@@ -241,43 +243,35 @@ input: {
   },
   datePicker: {
     flex: 1,
-    height: 50,
-    width: 150,
+    height: 40,
     borderColor: '#888',
     borderWidth: 1,
     borderRadius: 8,
-    paddingLeft: 1,
-    marginRight: 10,
-    
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    color: '#FFFFFF',
     justifyContent: 'center',
   },
- picker: {
-  height: 60,
-  width: 100,
-  color: '#FFFFFF',
-},
-inputYYYY: {
-  height: 'auto',
-  color: '#FFFFFF',
-  borderColor: '#888',
-  borderWidth: 1,
-  borderRadius: 8,
-  paddingLeft: 1,
-  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  picker: {
+    color: '#FFFFFF',
+    height: Platform.OS === 'ios' ? 160 : 40,
+    width: '100%',
+  },
+  inputYYYY: {
+    flex: 1,
+    height: 40,
+    borderColor: '#888',
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    color: '#FFFFFF',
     textAlign: 'center',
-},
-button: {
-  backgroundColor: '#1e90ff', // xanh nhạt sáng hơn
-  paddingVertical: 12,
-  borderRadius: 6,
-  alignItems: 'center',
-  marginTop: 10,
-  width: '90%',
-  alignSelf: 'center',
-},
-
+  },
+  button: {
+    backgroundColor: '#1e90ff',
+    paddingVertical: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 10,
+  },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
@@ -287,7 +281,6 @@ button: {
     padding: 10,
     marginBottom: 12,
     borderRadius: 4,
-    textAlign: 'center',
   },
   toastSuccess: {
     backgroundColor: 'rgba(0, 255, 0, 0.1)',
@@ -300,11 +293,10 @@ button: {
     alignItems: 'center',
   },
   linkButtonText: {
-  color: '#87cefa',
-  fontSize: 16,
-  fontWeight: 'bold',
-},
-
+    color: '#87cefa',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });
 
 export default RegisterScreen;

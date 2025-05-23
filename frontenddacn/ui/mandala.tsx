@@ -7,13 +7,12 @@ import {
     TouchableOpacity,
     SafeAreaView,
     StatusBar,
-    ScrollView,
+    // Image, // No longer needed
 } from 'react-native';
 
-// --- !! QUAN TRỌNG: Import các component từ file tương ứng !! ---
-// --- !! Bạn cần tạo các file này và export component từ chúng !! ---
-// --- !! Uncomment và sửa đường dẫn/tên file nếu cần !! ---
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 
+// --- IMPORT CÁC COMPONENT CHI TIẾT MANDALA ---
 import H1 from '../ui/C_F_ofMandala/H1';
 import H2 from '../ui/C_F_ofMandala/H2';
 import H3 from '../ui/C_F_ofMandala/H3';
@@ -22,26 +21,27 @@ import H5 from '../ui/C_F_ofMandala/H5';
 import H6 from '../ui/C_F_ofMandala/H6';
 import H7 from '../ui/C_F_ofMandala/H7';
 import H8 from '../ui/C_F_ofMandala/H8';
-// import H9 from '../../mandala/H9';
-// import H10 from '../../mandala/H10';
-// import H11 from '../../mandala/H11';
-// import H12 from '../../mandala/H12';
-// import H13 from '../../mandala/H13';
+import H9 from '../ui/C_F_ofMandala/H9';
+import H10 from '../ui/C_F_ofMandala/H10';
+import H11 from '../ui/C_F_ofMandala/H11';
+import H12 from '../ui/C_F_ofMandala/H12';
+import H13 from '../ui/C_F_ofMandala/H13';
 
-// --- Component Chính ---
-const MandalaScreen: React.FC = () => {
+interface MandalaScreenProps {
+    goBack: () => void;
+}
+
+const MandalaScreen: React.FC<MandalaScreenProps> = ({ goBack }) => {
     const [selectedMandalaId, setSelectedMandalaId] = useState<string | null>(null);
 
     const handleButtonPress = (mandalaId: string) => {
-        console.log(`Attempting to show content for: ${mandalaId}`);
         setSelectedMandalaId(mandalaId);
     };
 
-    const handleBackPress = () => {
+    const handleBackToGridPress = () => {
         setSelectedMandalaId(null);
     };
 
-    // --- Render nút bấm ---
     const renderButton = (id: string, specificStyle: object) => (
         <TouchableOpacity
             style={[styles.buttonBase, specificStyle]}
@@ -51,55 +51,45 @@ const MandalaScreen: React.FC = () => {
             <Text style={styles.buttonText}>{id}</Text>
         </TouchableOpacity>
     );
+
     const renderPlaceholder = () => <View style={styles.placeholder} />;
 
-    // --- Render lưới nút bấm ---
     const renderGridView = () => (
-      <View style={styles.gridContainer}>
-        {/* Hàng 1 */}
-          <View style={styles.row}>
-            {renderPlaceholder()}
-            {renderButton('H12', styles.buttonYellow)}
-            {renderPlaceholder()}
-          </View>
-          {/* Hàng 2 */}
-          <View style={styles.row}>
-            {renderButton('H6', styles.buttonYellow)}
-            {renderButton('H1', styles.buttonGreen)}
-            {renderButton('H8', styles.buttonYellow)}
-          </View>
-          {/* Hàng 3 (Hàng giữa) */}
-          <View style={styles.rowWide}>
-             {renderButton('H9', styles.buttonYellow)}
-             {renderButton('H2', styles.buttonGreen)}
-             {renderButton('H5', styles.buttonBlue)}
-             {renderButton('H4', styles.buttonGreen)}
-             {renderButton('H13', styles.buttonYellow)}
-          </View>
-          {/* Hàng 4 */}
-          <View style={styles.row}>
-            {renderButton('H7', styles.buttonYellow)}
-            {renderButton('H3', styles.buttonGreen)}
-            {renderButton('H10', styles.buttonYellow)}
-          </View>
-          {/* Hàng 5 */}
-          <View style={styles.row}>
-            {renderPlaceholder()}
-            {renderButton('H11', styles.buttonYellow)}
-            {renderPlaceholder()}
-          </View>
-      </View>
+        <View style={styles.gridContainer}>
+            {/* Grid rows - giữ nguyên */}
+            <View style={styles.row}>
+                {renderPlaceholder()}
+                {renderButton('H12', styles.buttonYellow)}
+                {renderPlaceholder()}
+            </View>
+            <View style={styles.row}>
+                {renderButton('H6', styles.buttonYellow)}
+                {renderButton('H1', styles.buttonGreen)}
+                {renderButton('H8', styles.buttonYellow)}
+            </View>
+            <View style={styles.rowWide}>
+                {renderButton('H9', styles.buttonYellow)}
+                {renderButton('H2', styles.buttonGreen)}
+                {renderButton('H5', styles.buttonBlue)}
+                {renderButton('H4', styles.buttonGreen)}
+                {renderButton('H13', styles.buttonYellow)}
+            </View>
+            <View style={styles.row}>
+                {renderButton('H7', styles.buttonYellow)}
+                {renderButton('H3', styles.buttonGreen)}
+                {renderButton('H10', styles.buttonYellow)}
+            </View>
+            <View style={styles.row}>
+                {renderPlaceholder()}
+                {renderButton('H11', styles.buttonYellow)}
+                {renderPlaceholder()}
+            </View>
+        </View>
     );
 
-
-    // --- Hàm render nội dung chi tiết TỪ FILE COMPONENT ---
     const renderDetailContent = () => {
-        if (!selectedMandalaId) {
-            return null;
-        }
-
+        if (!selectedMandalaId) return null;
         let DetailComponent: React.ComponentType<any> | null = null;
-
         switch (selectedMandalaId) {
             case 'H1': DetailComponent = H1; break;
             case 'H2': DetailComponent = H2; break;
@@ -109,45 +99,33 @@ const MandalaScreen: React.FC = () => {
             case 'H6': DetailComponent = H6; break;
             case 'H7': DetailComponent = H7; break;
             case 'H8': DetailComponent = H8; break;
-            // case 'H9': DetailComponent = H9; break;
-            // case 'H10': DetailComponent = H10; break;
-            // case 'H11': DetailComponent = H11; break;
-            // case 'H12': DetailComponent = H12; break;
-            // case 'H13': DetailComponent = H13; break;
+            case 'H9': DetailComponent = H9; break;
+            case 'H10': DetailComponent = H10; break;
+            case 'H11': DetailComponent = H11; break;
+            case 'H12': DetailComponent = H12; break;
+            case 'H13': DetailComponent = H13; break;
             default:
-                console.error(`Component for ${selectedMandalaId} not found or not imported.`);
                 DetailComponent = () => (
                     <Text style={styles.errorText}>
                         Không thể tải nội dung cho {selectedMandalaId}. Vui lòng kiểm tra lại.
                     </Text>
                 );
         }
-
-        return (
-            <View style={styles.detailContainer}>
-                <ScrollView style={styles.detailScrollView}>
-                    <Text style={styles.detailTitle}>Chi tiết cho {selectedMandalaId}</Text>
-                    {DetailComponent ? <DetailComponent /> : null}
-                </ScrollView>
-                <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-                    <Text style={styles.backButtonText}>Quay lại</Text>
-                </TouchableOpacity>
-            </View>
-        );
+        return DetailComponent ? <DetailComponent onBack={handleBackToGridPress} /> : null;
     };
 
-
-    // --- Phần return chính ---
     return (
         <ImageBackground
-            source={require('../assets/images/background.jpg')} // !!! Nhớ thay đổi đường dẫn này
+            source={require('../assets/images/background.jpg')} // Đảm bảo đường dẫn ảnh đúng
             style={styles.background}
             resizeMode="cover"
         >
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
             <SafeAreaView style={styles.safeArea}>
+
+
+
                 <View style={styles.container}>
-                    {/* --- Conditional Rendering --- */}
                     {selectedMandalaId === null ? renderGridView() : renderDetailContent()}
                 </View>
             </SafeAreaView>
@@ -155,41 +133,41 @@ const MandalaScreen: React.FC = () => {
     );
 };
 
-// --- Styles ---
 const styles = StyleSheet.create({
     background: {
-        flex: 1, // Đảm bảo ImageBackground chiếm toàn bộ không gian
+        flex: 1,
     },
     safeArea: {
-        flex: 1, // Đảm bảo SafeAreaView chiếm toàn bộ không gian trong ImageBackground
+        flex: 1,
     },
+    // homeIconImage style không còn cần thiết nếu dùng Icon component
     container: {
-        flex: 1, // Đảm bảo container chính chiếm toàn bộ không gian trong SafeAreaView
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
     gridContainer: {
-        width: '100%', // Chiếm toàn bộ chiều rộng của container
+        width: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 10, // Giữ padding để không sát viền
+        paddingHorizontal: 10,
     },
     row: {
         flexDirection: 'row',
-        justifyContent: 'center', // Căn giữa các nút trong hàng
+        justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
-        width: '70%', // Chiều rộng tương đối cho các hàng ít nút hơn
+        width: '70%',
     },
     rowWide: {
         flexDirection: 'row',
-        justifyContent: 'center', // Căn giữa các nút trong hàng
+        justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
-        width: '100%', // Chiều rộng tối đa cho hàng nhiều nút
+        width: '100%',
     },
     buttonBase: {
-        width: 65, // Kích thước nút có thể cần điều chỉnh responsive hơn
+        width: 65,
         height: 50,
         justifyContent: 'center',
         alignItems: 'center',
@@ -210,50 +188,16 @@ const styles = StyleSheet.create({
     buttonGreen: { backgroundColor: '#4ADE80' },
     buttonBlue: { backgroundColor: '#60A5FA' },
     placeholder: {
-        width: 65, // Kích thước tương đương nút
+        width: 65,
         height: 50,
         marginHorizontal: 5,
-    },
-
-    // --- Styles cho phần chi tiết ---
-    detailContainer: {
-        flex: 0.9, // Chiếm 90% chiều cao của container cha (thay vì marginVertical cố định)
-        width: '90%', // Giới hạn chiều rộng một chút
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        borderRadius: 10,
-        // marginVertical: 30, // Loại bỏ margin dọc cố định, thay bằng flex ở trên
-        padding: 15,
-    },
-    detailScrollView: {
-        width: '100%',
-        marginBottom: 15,
-    },
-    detailTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-        marginBottom: 15,
-        textAlign: 'center',
-    },
-    backButton: {
-        backgroundColor: '#DDDDDD',
-        paddingVertical: 12,
-        paddingHorizontal: 30,
-        borderRadius: 5,
-    },
-    backButtonText: {
-        color: '#000000',
-        fontSize: 16,
-        fontWeight: 'bold',
     },
     errorText: {
         color: 'red',
         fontSize: 16,
         textAlign: 'center',
         marginTop: 20,
-    }
+    },
 });
 
 export default MandalaScreen;
