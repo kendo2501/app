@@ -62,7 +62,7 @@ export default function NameChartScreen() {
       style={styles.background}
       resizeMode="cover"
     >
-      <View style={styles.container}>
+      <View style={styles.overlay}>
         <Text style={styles.title}>BIỂU ĐỒ TÊN</Text>
         <Text style={styles.subTitle}>Họ tên: {fullName}</Text>
 
@@ -88,21 +88,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  container: {
+  overlay: {
     flex: 1,
     padding: 20,
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#fff',
   },
   subTitle: {
     fontSize: 14,
-    marginBottom: 5,
+    marginBottom: 4,
     color: '#fff',
   },
   chart: {
@@ -112,13 +113,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   cell: {
-    width: 80,
-    height: 80,
+    width: 70,
+    height: 70,
     borderWidth: 1,
     borderColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 2,
+    margin: 3,
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
   cellText: {
