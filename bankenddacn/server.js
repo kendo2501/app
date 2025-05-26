@@ -14,8 +14,9 @@ app.use(express.json());
 app.use(morgan('dev')); 
 
 // Routes
-app.use('/', numberRoutes);     
+ app.use('/', numberRoutes);     
 app.use('/api', authRoutes);   
+ 
 
 // Khởi chạy server
 app.listen(port, () => {
