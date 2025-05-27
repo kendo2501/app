@@ -97,7 +97,7 @@ export default function TabLayout() {
         name="user" // Màn hình "User"
         options={{
           title: 'User',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="heart.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
         }}
       />
       {/* Các Tabs.Screen khác */}
