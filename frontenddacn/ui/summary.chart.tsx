@@ -1,6 +1,6 @@
 import { calculateCombinedMap } from '@/untils/calculatorsumary';
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const layout = [
@@ -34,16 +34,6 @@ export default function CombinedChartScreen() {
     fetchUserInfoAndCalculate();
   }, []);
 
-  const getPresentNumbers = (map: { [key: number]: string }) =>
-    Object.keys(map)
-      .filter(key => map[Number(key)] !== '')
-      .map(Number);
-
-  useEffect(() => {
-    const present = getPresentNumbers(combinedMap);
-    console.log('Các số xuất hiện:', present);
-  }, [combinedMap]);
-
   const renderCell = (num: number) => (
     <View key={num} style={styles.cell}>
       <Text style={styles.cellText}>{combinedMap[num]}</Text>
@@ -57,7 +47,7 @@ export default function CombinedChartScreen() {
         style={styles.background}
         resizeMode="cover"
       >
-        <View style={styles.container}>
+        <View style={styles.loadingContainer}>
           <Text style={styles.title}>Đang tải dữ liệu...</Text>
         </View>
       </ImageBackground>
@@ -70,7 +60,7 @@ export default function CombinedChartScreen() {
       style={styles.background}
       resizeMode="cover"
     >
-      <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.container}>
         <Text style={styles.title}>BIỂU ĐỒ TỔNG HỢP</Text>
         <Text style={styles.subTitle}>Họ tên: {userInfo.fullName}</Text>
         <Text style={styles.subTitle}>
@@ -84,7 +74,7 @@ export default function CombinedChartScreen() {
             </View>
           ))}
         </View>
-      </ScrollView>
+      </View>
     </ImageBackground>
   );
 }
@@ -95,10 +85,18 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  container: {
-    padding: 20,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   title: {
     fontSize: 22,

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
   ImageBackground,
 } from 'react-native';
@@ -11,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { calculateCombinedMap } from '@/untils/calculatorsumary';
+import { BASE_URL } from '@/untils/url';
 
 type ArrowData = {
   arrow: string;
@@ -35,7 +35,6 @@ export default function TrendScreen() {
     yyyy: number;
   } | null>(null);
 
-  // Lấy thông tin người dùng từ AsyncStorage
   useEffect(() => {
     const fetchUserInfo = async () => {
       const stored = await AsyncStorage.getItem('userInfo');
@@ -54,11 +53,10 @@ export default function TrendScreen() {
     fetchUserInfo();
   }, []);
 
-  // Gọi API lấy mô tả mũi tên
   useEffect(() => {
     const fetchDescriptions = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/mongo/api/arrows');
+        const response = await axios.get(`${BASE_URL}/mongo/api/arrows`);
         setArrowDescriptions(response.data);
       } catch (error) {
         console.error('Lỗi khi gọi API:', error);
@@ -109,51 +107,57 @@ export default function TrendScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <ImageBackground
-        source={require('@/assets/images/background.jpg')}
-        style={{ flex: 1 }}
-        resizeMode="cover"
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Text style={styles.backText}>{'< QUAY LẠI GRID'}</Text>
-            </TouchableOpacity>
+  <View style={styles.flex}>
+    <ImageBackground
+      source={require('@/assets/images/background.jpg')}
+      style={styles.flex}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <Text style={styles.header}>Mũi Tên Xu Hướng</Text>
 
-            <Text style={styles.header}>Mũi Tên Xu Hướng</Text>
+          {trendData.length === 0 ? (
+            <Text style={styles.description}>Không có dữ liệu mũi tên xu hướng</Text>
+          ) : (
+            trendData.map((trend, index) => {
+              const description = getDescription(trend.arrow, trend.status);
+              return (
+                <View key={index} style={styles.trendItem}>
+                  <Text style={styles.description}>{description}</Text>
+                </View>
+              );
+            })
+          )}
+        </ScrollView>
+      </View>
+    </ImageBackground>
+  </View>
+);
 
-            {trendData.length === 0 ? (
-              <Text style={styles.description}>Không có dữ liệu mũi tên xu hướng</Text>
-            ) : (
-              trendData.map((trend, index) => {
-                const description = getDescription(trend.arrow, trend.status);
-                return (
-                  <View key={index} style={{ marginBottom: 15, alignItems: 'center' }}>
-                    <Text style={styles.description}>{description}</Text>
-                  </View>
-                );
-              })
-            )}
-          </ScrollView>
-        </View>
-      </ImageBackground>
-    </View>
-  );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
+    justifyContent: 'center', // căn giữa theo chiều dọc
+    alignItems: 'center', // căn giữa theo chiều ngang
     padding: 20,
     paddingBottom: 100,
   },
   header: {
     fontWeight: 'bold',
-    fontSize: 18,
-    marginTop: 50,
+    fontSize: 20,
     marginBottom: 20,
     color: 'white',
     textAlign: 'center',
@@ -162,7 +166,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'white',
     textAlign: 'center',
-    marginTop: 4,
+  },
+  trendItem: {
+    marginBottom: 15,
+    alignItems: 'center',
   },
   backButton: {
     position: 'absolute',
