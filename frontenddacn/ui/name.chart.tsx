@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-
-interface Props {
-  fullName: string;
-}
+import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const layout = [
   [3, 6, 9],
@@ -11,7 +8,6 @@ const layout = [
   [1, 4, 7]
 ];
 
-// Bảng chữ cái → số
 const letterToNumberMap: { [key: string]: number } = {
   A: 1, J: 1, S: 1,
   B: 2, K: 2, T: 2,
@@ -24,65 +20,111 @@ const letterToNumberMap: { [key: string]: number } = {
   I: 9, R: 9,
 };
 
-export default function NameChartScreen({ fullName }: Props) {
+export default function NameChartScreen() {
   const [chartMap, setChartMap] = useState<{ [key: number]: string }>({});
+  const [fullName, setFullName] = useState<string>('Đang tải...');
 
   useEffect(() => {
-    const nameUpper = fullName.toUpperCase().replace(/[^A-Z]/g, ''); // chỉ giữ chữ cái A-Z
-    const numbers: number[] = [];
+    const fetchUserInfo = async () => {
+      const stored = await AsyncStorage.getItem('userInfo');
+      if (stored) {
+        const user = JSON.parse(stored);
+        setFullName(user.fullName || 'Không rõ');
+        generateChart(user.fullName || '');
+      }
+    };
 
-    for (const char of nameUpper) {
-      const num = letterToNumberMap[char];
-      if (num) numbers.push(num);
-    }
+    const generateChart = (name: string) => {
+      const nameUpper = name.toUpperCase().replace(/[^A-Z]/g, '');
+      const numbers: number[] = [];
 
-    // Tạo map từ số 1-9
-    const map: { [key: number]: string } = {};
-    for (let i = 1; i <= 9; i++) map[i] = '';
+      for (const char of nameUpper) {
+        const num = letterToNumberMap[char];
+        if (num) numbers.push(num);
+      }
 
-    numbers.forEach(num => {
-      map[num] += num;
-    });
+      const map: { [key: number]: string } = {};
+      for (let i = 1; i <= 9; i++) map[i] = '';
 
-    setChartMap(map);
-  }, [fullName]);
+      numbers.forEach(num => {
+        map[num] += num;
+      });
+
+      setChartMap(map);
+    };
+
+    fetchUserInfo();
+  }, []);
 
   return (
-    
+    <ImageBackground
+      source={require('./../assets/images/background.jpg')}
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay}>
+        <Text style={styles.title}>BIỂU ĐỒ TÊN</Text>
+        <Text style={styles.subTitle}>Họ tên: {fullName}</Text>
 
-    <View style={styles.container}>
-      <Text style={styles.title}>BIỂU ĐỒ TÊN</Text>
-      <Text style={styles.subTitle}>Họ tên: {fullName}</Text>
-
-      <View style={styles.chart}>
-        {layout.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map((num) => (
-              <View key={num} style={styles.cell}>
-                <Text style={styles.cellText}>{chartMap[num]}</Text>
-              </View>
-            ))}
-          </View>
-        ))}
+        <View style={styles.chart}>
+          {layout.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.row}>
+              {row.map((num) => (
+                <View key={num} style={styles.cell}>
+                  <Text style={styles.cellText}>{chartMap[num]}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
       </View>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff', alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
-  subTitle: { fontSize: 14, marginBottom: 5 },
-  chart: { marginTop: 20 },
-  row: { flexDirection: 'row' },
+  background: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    flex: 1,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#fff',
+  },
+  subTitle: {
+    fontSize: 14,
+    marginBottom: 4,
+    color: '#fff',
+  },
+  chart: {
+    marginTop: 20,
+  },
+  row: {
+    flexDirection: 'row',
+  },
   cell: {
-    width: 80,
-    height: 80,
+    width: 70,
+    height: 70,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 2,
+    margin: 3,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
-  cellText: { fontSize: 18, fontWeight: 'bold' },
+  cellText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
 });

@@ -13,9 +13,10 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev')); 
 
-// Rout
+// Router
 app.use('/', numberRoutes);     
 app.use('/api', authRoutes);   
+ 
 
 // Khởi chạy server
 app.listen(port, () => {

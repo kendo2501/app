@@ -237,6 +237,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
     marginBottom: 12,
+    width: '90%',
+    // marginLeft: 12,
+    alignSelf: 'center',
   },
   datePicker: {
     flex: 1,

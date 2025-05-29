@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  ImageBackground,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { calculateCombinedMap } from '@/untils/calculatorsumary';
-import { ImageBackground } from 'react-native'; // nhớ import nếu chưa có
+import { BASE_URL } from '@/untils/url';
 
 type ArrowData = {
-  arrow: string;       // VD: "3-5-7"
-  advantage: string;   // VD: "TÂM LINH"
-  defect: string;    // VD: "TÍNH CÁCH" 
+  arrow: string;
+  advantage: string;
+  defect: string;
 };
 
 type Trend = {
@@ -16,29 +23,41 @@ type Trend = {
   status: 'mũi tên mạnh' | 'mũi tên trống';
 };
 
-interface Props {
-  fullName: string;
-  day: number;
-  month: number;
-  year: number;
-}
-
-export default function TrendScreen({ fullName, day, month, year }: Props) {
+export default function TrendScreen() {
   const navigation = useNavigation();
-  const route = useRoute<any>();
-
   const [trendData, setTrendData] = useState<Trend[]>([]);
   const [arrowDescriptions, setArrowDescriptions] = useState<ArrowData[]>([]);
   const [combinedMap, setCombinedMap] = useState<{ [key: number]: string }>({});
+  const [userInfo, setUserInfo] = useState<{
+    fullName: string;
+    dd: number;
+    mm: number;
+    yyyy: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const stored = await AsyncStorage.getItem('userInfo');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setUserInfo(parsed);
+
+        const map = calculateCombinedMap(parsed.fullName, parsed.dd, parsed.mm, parsed.yyyy);
+        setCombinedMap(map);
+
+        const numbersPresent = getPresentNumbersFromMap(map);
+        const trends = detectTrend(numbersPresent);
+        setTrendData(trends);
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   useEffect(() => {
     const fetchDescriptions = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/arrows');
-        console.log('API response:', response.data);
-        const mergedDescriptions = response.data;
-        setArrowDescriptions(mergedDescriptions);
-        console.log('Merged descriptions:', mergedDescriptions);
+        const response = await axios.get(`${BASE_URL}/mongo/api/arrows`);
+        setArrowDescriptions(response.data);
       } catch (error) {
         console.error('Lỗi khi gọi API:', error);
       }
@@ -66,11 +85,9 @@ export default function TrendScreen({ fullName, day, month, year }: Props) {
     ];
 
     const trends: Trend[] = [];
-    console.log('Trend data:', trends);
-
     arrows.forEach((arrow) => {
-      const hasAll = arrow.every(num => numbers.includes(num));// MŨi tên Mạnh
-      const hasNone = arrow.every(num => !numbers.includes(num));// MŨi tên trống
+      const hasAll = arrow.every(num => numbers.includes(num));
+      const hasNone = arrow.every(num => !numbers.includes(num));
       if (hasAll) {
         trends.push({ arrow, status: 'mũi tên mạnh' });
       } else if (hasNone) {
@@ -84,91 +101,75 @@ export default function TrendScreen({ fullName, day, month, year }: Props) {
   const getDescription = (arrow: number[], status: string): string => {
     const arrowStr = arrow.join('-');
     const match = arrowDescriptions.find(desc => desc.arrow === arrowStr);
-    console.log('arrowDescriptions:', arrowDescriptions);
-    
-    if (!match) {
-      return `${arrowStr}: mũi tên không rõ`;
-    }
-  
+    if (!match) return `${arrowStr}: mũi tên không rõ`;
     const type = status === 'mũi tên mạnh' ? match.advantage : match.defect;
-    
-    if (typeof type !== 'string') {
-      return `${arrowStr}: mũi tên không rõ`;
-    }
-    
-    return `${arrowStr}: mũi tên ${type.toLowerCase()}`;    
+    return `${arrowStr}: mũi tên ${type.toLowerCase()}`;
   };
-  
-  
-
-  useEffect(() => {
-    const map = calculateCombinedMap(fullName, day, month, year);
-    setCombinedMap(map);
-
-    const numbersPresent = getPresentNumbersFromMap(map);
-    const trends = detectTrend(numbersPresent);
-    setTrendData(trends);
-  }, [fullName, day, month, year]);
 
   return (
-    <View style={{ flex: 1 }}>
-      <ImageBackground
-        source={require('@/assets/images/background.jpg')}
-        style={{ flex: 1 }}
-        resizeMode="cover"
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)' }}>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Text style={styles.backText}>{'< QUAY LẠI GRID'}</Text>
-            </TouchableOpacity>
+  <View style={styles.flex}>
+    <ImageBackground
+      source={require('@/assets/images/background.jpg')}
+      style={styles.flex}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <Text style={styles.header}>Mũi Tên Xu Hướng</Text>
 
-            <Text style={styles.header}>Mũi Tên Xu Hướng</Text>
+          {trendData.length === 0 ? (
+            <Text style={styles.description}>Không có dữ liệu mũi tên xu hướng</Text>
+          ) : (
+            trendData.map((trend, index) => {
+              const description = getDescription(trend.arrow, trend.status);
+              return (
+                <View key={index} style={styles.trendItem}>
+                  <Text style={styles.description}>{description}</Text>
+                </View>
+              );
+            })
+          )}
+        </ScrollView>
+      </View>
+    </ImageBackground>
+  </View>
+);
 
-            {trendData.length === 0 ? (
-              <Text style={styles.description}>Không có dữ liệu mũi tên xu hướng</Text>
-            ) : (
-              trendData.map((trend, index) => {
-                const description = getDescription(trend.arrow, trend.status);
-                return (
-                  <View key={index} style={{ marginBottom: 15, alignItems: 'center' }}>
-                    <Text style={styles.description}>{description}</Text>
-                  </View>
-                );
-              })
-            )}
-          </ScrollView>
-        </View>
-      </ImageBackground>
-    </View>
-  );
-  
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
+    justifyContent: 'center', // căn giữa theo chiều dọc
+    alignItems: 'center', // căn giữa theo chiều ngang
     padding: 20,
     paddingBottom: 100,
   },
-  container: {
-    flex: 1, // nếu vẫn dùng container
-  },
   header: {
     fontWeight: 'bold',
-    fontSize: 18,
-    marginTop: 50,
+    fontSize: 20,
     marginBottom: 20,
     color: 'white',
     textAlign: 'center',
   },
   description: {
     fontSize: 14,
-    color: 'white', // phải đổi sang trắng hoặc sáng để nổi bật
+    color: 'white',
     textAlign: 'center',
-    marginTop: 4,
+  },
+  trendItem: {
+    marginBottom: 15,
+    alignItems: 'center',
   },
   backButton: {
     position: 'absolute',
