@@ -4,7 +4,7 @@ const { connectMongoDB, pool } = require('../config/db1');
 
 // Import các model từ tệp models/Arrows.js đã được sửa đổi
 const { AdvantageArrow, DefectArrow } = require('../models/Arrows');
-const Chart = require('../models/_chart');
+const birthDescription = require('../models/_birthDescription');
 const HighPeaks = require('../models/highPeaks');
 const MainNumber = require('../models/mainNumber');
 const PersonalYear = require('../models/personalYear'); // Vẫn giữ lại để dùng cho route /data và nếu controller không xử lý việc lấy tất cả
@@ -21,7 +21,7 @@ router.get('/data', async (req, res) => {
     // Lấy dữ liệu từ các collection MongoDB chuyên biệt
     const advantageArrowsData = await AdvantageArrow.find({});
     const defectArrowsData = await DefectArrow.find({});
-    const chartsData = await Chart.find({});
+    const birthDescriptionsData = await birthDescription.find({});
     const highPeaksData = await HighPeaks.find({});
     const mainNumbersData = await MainNumber.find({});
     const personalYearsData = await PersonalYear.find({}); // Vẫn lấy tất cả personal years cho route /data
@@ -33,7 +33,7 @@ router.get('/data', async (req, res) => {
       mongo: {
         advantageArrow: advantageArrowsData,
         defectArrow: defectArrowsData,
-        chart: chartsData,
+        birthDescription: birthDescriptionsData,
         highPeaks: highPeaksData,
         mainNumber: mainNumbersData,
         personalYear: personalYearsData, // Dữ liệu personalYear vẫn được trả về
@@ -88,19 +88,19 @@ router.get('/mongo/api/arrows', async (req, res) => {
 
 // --- CÁC ROUTE TÌM KIẾM CHO MONGODB ---
 
-// Tìm kiếm trong 'chart'
-router.get('/mongo/chart/search', async (req, res) => {
+// Tìm kiếm trong 'birthDescription'
+router.get('/mongo/birthDescription/search', async (req, res) => {
   const { number } = req.query;
   if (!number) {
     return res.status(400).json({ error: 'Missing search parameter: number' });
   }
   try {
     await connectMongoDB();
-    const results = await Chart.find({ number: number });
+    const results = await birthDescription.find({ number: number });
     res.json(results);
   } catch (error) {
-    console.error('Error searching charts:', error);
-    res.status(500).json({ error: 'Failed to search charts' });
+    console.error('Error searching birthDescriptions:', error);
+    res.status(500).json({ error: 'Failed to search birthDescriptions' });
   }
 });
 

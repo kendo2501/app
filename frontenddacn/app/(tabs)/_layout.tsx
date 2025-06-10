@@ -3,6 +3,7 @@ import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect, useState, useRef } from 'react'; // useRef đã được import
 import { Platform, ActivityIndicator, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 import eventBus from '../../untils/eventBus'; // Đảm bảo đường dẫn đúng
 
@@ -12,6 +13,7 @@ import { IconSymbol } from '../../components/ui/IconSymbol';
 import TabBarBackground from '../../components/ui/TabBarBackground';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from '../../hooks/useColorScheme';
+
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -53,7 +55,7 @@ export default function TabLayout() {
   }
 
   if (!isLoggedIn) {
-     return null;
+    return null;
   }
 
   return (
@@ -93,11 +95,15 @@ export default function TabLayout() {
           },
         }}
       />
+
+
       <Tabs.Screen
-        name="user" // Màn hình "User"
+        name="user"
         options={{
           title: 'User',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="heart.fill" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person" size={28} color={color} />
+          ),
         }}
       />
       {/* Các Tabs.Screen khác */}
