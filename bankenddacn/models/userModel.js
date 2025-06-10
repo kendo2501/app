@@ -1,4 +1,4 @@
-const { pool } = require('../config/db2');
+const { pool } = require('../config/db');
 
 // Kiểu callback
 const findUserByUsername = (username, callback) => {

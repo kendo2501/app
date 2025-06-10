@@ -1,17 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { connectMongoDB, pool } = require('../config/db1');
+const { connectMongoDB } = require('../config/db');
 
-// Import các model từ tệp models/Arrows.js đã được sửa đổi
+// Import các model từ tệp models
 const { AdvantageArrow, DefectArrow } = require('../models/Arrows');
 const birthDescription = require('../models/_birthDescription');
 const HighPeaks = require('../models/highPeaks');
 const MainNumber = require('../models/mainNumber');
-const PersonalYear = require('../models/personalYear'); // Vẫn giữ lại để dùng cho route /data và nếu controller không xử lý việc lấy tất cả
+const PersonalYear = require('../models/personalYear');
+// <<< THAY ĐỔI: Import model 'mandala' từ file models/mandala.js
+// Tên biến Mandala (viết hoa) là theo quy ước, nó sẽ đại diện cho model 'mandala'
+const Mandala = require('../models/mandala');
 
 // Import controllers
 const lifePathController = require('../controllers/lifePathController');
-const personalYearController = require('../controllers/personalYearController'); // <<< THÊM TỪ CODE THỨ 2
+const personalYearController = require('../controllers/personalYearController');
 
 // Route lấy tất cả dữ liệu tổng hợp
 router.get('/data', async (req, res) => {
@@ -24,10 +27,9 @@ router.get('/data', async (req, res) => {
     const birthDescriptionsData = await birthDescription.find({});
     const highPeaksData = await HighPeaks.find({});
     const mainNumbersData = await MainNumber.find({});
-    const personalYearsData = await PersonalYear.find({}); // Vẫn lấy tất cả personal years cho route /data
-
-    // Lấy dữ liệu từ MySQL
-    const [mysqlData] = await pool.promise().execute('SELECT * FROM mandala_infor');
+    const personalYearsData = await PersonalYear.find({});
+    // <<< THAY ĐỔI: Sử dụng model Mandala (ánh xạ tới model 'mandala')
+    const mandalaData = await Mandala.find({});
 
     res.json({
       mongo: {
@@ -36,9 +38,10 @@ router.get('/data', async (req, res) => {
         birthDescription: birthDescriptionsData,
         highPeaks: highPeaksData,
         mainNumber: mainNumbersData,
-        personalYear: personalYearsData, // Dữ liệu personalYear vẫn được trả về
+        personalYear: personalYearsData,
+        mandala: mandalaData, // <<< THAY ĐỔI: Key là 'mandala'
       },
-      mysql: mysqlData,
+      // mysql: mysqlData, // Bỏ nếu không còn dùng MySQL
     });
   } catch (error) {
     console.error('Error fetching all data:', error);
@@ -46,14 +49,12 @@ router.get('/data', async (req, res) => {
   }
 });
 
-// Route API: Lấy dữ liệu mũi tên đã được kết hợp từ advantageArrow và defectArrow
+// Route API: Lấy dữ liệu mũi tên đã được kết hợp
 router.get('/mongo/api/arrows', async (req, res) => {
     try {
         await connectMongoDB();
-
         const advantagesList = await AdvantageArrow.find({}).lean();
         const defectsList = await DefectArrow.find({}).lean();
-
         const combinedArrowsMap = new Map();
 
         advantagesList.forEach(adv => {
@@ -75,16 +76,13 @@ router.get('/mongo/api/arrows', async (req, res) => {
                 });
             }
         });
-
         const finalCombinedArrows = Array.from(combinedArrowsMap.values());
         res.json(finalCombinedArrows);
-
     } catch (err) {
         console.error('Error combining arrow data for /mongo/api/arrows:', err);
         res.status(500).json({ error: 'Lỗi khi kết hợp dữ liệu mũi tên' });
     }
 });
-
 
 // --- CÁC ROUTE TÌM KIẾM CHO MONGODB ---
 
@@ -120,12 +118,29 @@ router.get('/mongo/highPeaks/search', async (req, res) => {
   }
 });
 
+// <<< THAY ĐỔI: Route tìm kiếm trong collection 'mandala' (hoặc tên từ process.env.COLLECTION_NAME)
+router.get('/mongo/mandala/search', async (req, res) => {
+  const { number } = req.query;
+  if (!number) {
+    return res.status(400).json({ error: 'Missing search parameter: number' });
+  }
+  try {
+    await connectMongoDB();
+    
+    const results = await Mandala.find({ number: number });
+    res.json(results);
+  } catch (error) {
+    console.error('Error searching in mandala collection:', error);
+    res.status(500).json({ error: 'Failed to search mandala data' });
+  }
+});
+
 // Route cho Life Path (sử dụng controller)
 router.post('/life-path', async (req, res, next) => {
   console.log('Hit /life-path route');
   try {
     await connectMongoDB();
-    await pool.promise().query('SELECT 1');
+   
     next();
   } catch (error) {
     console.error('Error connecting to databases:', error);
@@ -133,36 +148,18 @@ router.post('/life-path', async (req, res, next) => {
   }
 }, lifePathController.getLifePathInfo);
 
-
-router.post('/personal-year', async (req, res, next) => { // <-- Thêm async ở đây
+router.post('/personal-year', async (req, res, next) => {
   console.log('Hit /personal-year route');
   try {
-    await connectMongoDB(); // <<< THÊM DÒNG NÀY ĐỂ KẾT NỐI MONGODB
-    // Nếu controller personalYearController cũng cần MySQL, bạn có thể thêm:
-    // await pool.promise().query('SELECT 1');
-    next(); // Chuyển sang controller SAU KHI kết nối thành công
+    await connectMongoDB();
+    // await pool.promise().query('SELECT 1'); // Giữ lại nếu personalYearController CÓ dùng MySQL
+    next();
   } catch (error) {
     console.error('Error connecting to MongoDB for /personal-year:', error);
-    // Trả về lỗi nếu không kết nối được DB, thay vì để controller chạy và timeout
     res.status(500).json({ error: 'Failed to connect to database for personal year info' });
   }
 }, personalYearController.getPersonalYearInfo);
 
-router.get('/mysql/search', async (req, res) => {
-  const { number } = req.query;
-  if (!number) {
-    return res.status(400).json({ error: 'Missing search parameter: number' });
-  }
-  try {
-    const [results] = await pool.promise().execute(
-      'SELECT * FROM mandala_infor WHERE number = ?',
-      [number]
-    );
-    res.json(results);
-  } catch (error) {
-    console.error('Error searching MySQL:', error);
-    res.status(500).json({ error: 'Failed to search MySQL data' });
-  }
-});
+
 
 module.exports = router;
