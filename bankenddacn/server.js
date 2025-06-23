@@ -13,8 +13,8 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev')); 
 
-// Routes
- app.use('/', numberRoutes);     
+// Router
+app.use('/', numberRoutes);     
 app.use('/api', authRoutes);   
  
 

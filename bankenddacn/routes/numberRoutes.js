@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { connectMongoDB, pool } = require('../config/db1');
+const { connectMongoDB } = require('../config/db');
 
 // Import các model từ các tệp trong thư mục models
 const { AdvantageArrow, DefectArrow } = require('../models/Arrows');
-const Chart = require('../models/_chart');
+const birthDescription = require('../models/_birthDescription');
 const HighPeaks = require('../models/highPeaks');
 const MainNumber = require('../models/mainNumber');
 const PersonalYear = require('../models/personalYear');
@@ -22,7 +22,7 @@ router.get('/data', async (req, res) => {
     // Lấy dữ liệu từ các collection MongoDB chuyên biệt
     const advantageArrowsData = await AdvantageArrow.find({});
     const defectArrowsData = await DefectArrow.find({});
-    const chartsData = await Chart.find({});
+    const birthDescriptionsData = await birthDescription.find({});
     const highPeaksData = await HighPeaks.find({});
     const mainNumbersData = await MainNumber.find({});
     const personalYearsData = await PersonalYear.find({});
@@ -34,12 +34,12 @@ router.get('/data', async (req, res) => {
       mongo: {
         advantageArrow: advantageArrowsData,
         defectArrow: defectArrowsData,
-        chart: chartsData,
+        birthDescription: birthDescriptionsData,
         highPeaks: highPeaksData,
         mainNumber: mainNumbersData,
         personalYear: personalYearsData,
       },
-      mysql: mysqlData,
+      // mysql: mysqlData, // Bỏ nếu không còn dùng MySQL
     });
   } catch (error) {
     console.error('Error fetching all data:', error);
@@ -47,7 +47,7 @@ router.get('/data', async (req, res) => {
   }
 });
 
-// Route API: Lấy dữ liệu mũi tên đã được kết hợp từ advantageArrow và defectArrow
+// Route API: Lấy dữ liệu mũi tên đã được kết hợp
 router.get('/mongo/api/arrows', async (req, res) => {
   try {
     await connectMongoDB();
@@ -87,19 +87,19 @@ router.get('/mongo/api/arrows', async (req, res) => {
 
 // --- CÁC ROUTE TÌM KIẾM CHO MONGODB ---
 
-// Tìm kiếm trong 'chart'
-router.get('/mongo/chart/search', async (req, res) => {
+// Tìm kiếm trong 'birthDescription'
+router.get('/mongo/birthDescription/search', async (req, res) => {
   const { number } = req.query;
   if (!number) {
     return res.status(400).json({ error: 'Missing search parameter: number' });
   }
   try {
     await connectMongoDB();
-    const results = await Chart.find({ number: number });
+    const results = await birthDescription.find({ number: number });
     res.json(results);
   } catch (error) {
-    console.error('Error searching charts:', error);
-    res.status(500).json({ error: 'Failed to search charts' });
+    console.error('Error searching birthDescriptions:', error);
+    res.status(500).json({ error: 'Failed to search birthDescriptions' });
   }
 });
 
@@ -121,12 +121,29 @@ router.get('/mongo/highPeaks/search', async (req, res) => {
   }
 });
 
+// <<< THAY ĐỔI: Route tìm kiếm trong collection 'mandala' (hoặc tên từ process.env.COLLECTION_NAME)
+router.get('/mongo/mandala/search', async (req, res) => {
+  const { number } = req.query;
+  if (!number) {
+    return res.status(400).json({ error: 'Missing search parameter: number' });
+  }
+  try {
+    await connectMongoDB();
+    
+    const results = await Mandala.find({ number: number });
+    res.json(results);
+  } catch (error) {
+    console.error('Error searching in mandala collection:', error);
+    res.status(500).json({ error: 'Failed to search mandala data' });
+  }
+});
+
 // Route cho Life Path (sử dụng controller)
 router.post('/life-path', async (req, res, next) => {
   console.log('Hit /life-path route');
   try {
     await connectMongoDB();
-    await pool.promise().query('SELECT 1');
+   
     next();
   } catch (error) {
     console.error('Error connecting to databases:', error);
