@@ -2,17 +2,17 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  Button,
   StyleSheet,
   ScrollView,
   Alert,
   ActivityIndicator,
   ImageBackground,
   SafeAreaView,
-  StatusBar
+  StatusBar,
+  TouchableOpacity,
 } from 'react-native';
-import { BASE_URL } from '@/untils/url';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '@/untils/url';
 
 export default function PersonalYearScreen() {
   const [dd, setDd] = useState('');
@@ -73,26 +73,32 @@ export default function PersonalYearScreen() {
 
   return (
     <ImageBackground
-      source={require('../assets/images/background.jpg')} // giống MandalaScreen
+      source={require('../assets/images/background.jpg')}
       style={styles.background}
       resizeMode="cover"
     >
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.title}>Tính Năm Cá Nhân (Personal Year)</Text>
+          <Text style={styles.title}>🔮 Tính Năm Cá Nhân</Text>
 
           <View style={styles.birthDateContainer}>
-            <Text style={styles.text}>Ngày sinh: {dd} / {mm} / {yyyy}</Text>
+            <Text style={styles.subtitle}>📅 Ngày sinh: {dd} / {mm} / {yyyy}</Text>
           </View>
 
-          <Button title="Tính lại" onPress={() => fetchPersonalYear(dd, mm, yyyy)} disabled={loading} />
+          {/* <TouchableOpacity
+            style={[styles.button, loading && { backgroundColor: '#888' }]}
+            onPress={() => fetchPersonalYear(dd, mm, yyyy)}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>🔁 Tính lại</Text>
+          </TouchableOpacity> */}
 
           {loading && <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />}
 
           {result && !loading && (
             <View style={styles.resultContainer}>
-              <Text style={styles.result}>Năm cá nhân: {result.number}</Text>
+              <Text style={styles.resultText}>🔢 Năm cá nhân: {result.number}</Text>
               <Text style={styles.description}>{result.information}</Text>
             </View>
           )}
@@ -113,34 +119,52 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: 'white',
-  },
-  birthDateContainer: {
-    marginBottom: 15,
     alignItems: 'center',
   },
-  text: {
-    color: 'white',
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  subtitle: {
     fontSize: 16,
+    color: '#fff',
+    textAlign: 'center',
+  },
+  birthDateContainer: {
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: '#3498db',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   resultContainer: {
-    marginTop: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+    padding: 16,
+    width: '100%',
   },
-  result: {
+  resultText: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 12,
     textAlign: 'center',
-    color: 'white',
   },
   description: {
-    marginTop: 10,
-    fontSize: 16,
-    color: 'white',
+    fontSize: 15,
+    color: '#eee',
+    lineHeight: 22,
+    textAlign: 'left',
   },
 });
