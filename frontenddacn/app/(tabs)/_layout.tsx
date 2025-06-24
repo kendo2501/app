@@ -3,6 +3,7 @@ import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect, useState, useRef } from 'react'; // useRef đã được import
 import { Platform, ActivityIndicator, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 import eventBus from '../../untils/eventBus'; // Đảm bảo đường dẫn đúng
 
@@ -12,6 +13,7 @@ import { IconSymbol } from '../../components/ui/IconSymbol';
 import TabBarBackground from '../../components/ui/TabBarBackground';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from '../../hooks/useColorScheme';
+
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -72,7 +74,7 @@ export default function TabLayout() {
         name="index" // Màn hình "Home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons name="home" size={28} color={color} />,
         }}
         listeners={{
           tabPress: (e) => {
@@ -86,21 +88,20 @@ export default function TabLayout() {
               // Reset bộ đếm về 0 để chu kỳ tiếp theo lại bắt đầu từ đầu
               homeTabPressCountRef.current = 0;
             } else {
-              // Đây là lần nhấn đầu tiên (trong chu kỳ 2 lần nhấn)
               console.log('[TabLayout] Home tab pressed for the 1st time. Next press will reset.');
             }
-            // Hành vi điều hướng mặc định của tab vẫn xảy ra.
           },
         }}
       />
       <Tabs.Screen
-        name="user" // Màn hình "User"
-        options={{
-          title: 'User',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-        }}
-      />
-      {/* Các Tabs.Screen khác */}
+  name="user"
+  options={{
+    title: 'User',
+    tabBarIcon: ({ color }) => (
+      <Ionicons name="person" size={28} color={color} />
+    ),
+  }}
+/>
     </Tabs>
   );
 }
