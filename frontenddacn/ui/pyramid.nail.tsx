@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { BASE_URL } from '@/untils/url';
 const { width } = Dimensions.get('window');
 const pyramidWidth = width * 0.9;
 const nodeRadius = 20;
@@ -94,7 +94,7 @@ export default function PyramidConnectScreen() {
           setMm(Number(userInfo.mm));
           setYyyy(Number(userInfo.yyyy));
 
-          const response = await fetch('http://192.168.2.148:3000/sub-numbers-info', {
+          const response = await fetch(`${BASE_URL}/sub-numbers-info`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ dd: userInfo.dd, mm: userInfo.mm, yyyy: userInfo.yyyy }),
