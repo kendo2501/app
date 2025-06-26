@@ -35,6 +35,19 @@ export default function TrendScreen() {
     yyyy: number;
   } | null>(null);
 
+  // Danh sách cách khắc phục khi thiếu số
+  const deficiencyFixes: { [key: number]: string } = {
+    1: 'Hãy viết nhật ký, học cách bộc lộ quan điểm, chính kiến, biết đặt mục tiêu rõ ràng.',
+    2: 'Hãy lắng nghe, cảm nhận suy nghĩ của người khác. Tập thiền hoặc yoga để rèn luyện khả năng tĩnh tâm.',
+    3: 'Hãy tập kể chuyện cười, tham gia hoạt động vui vẻ sôi nổi để cải thiện giao tiếp.',
+    4: 'Hãy làm việc thực tế và cẩn thận hơn.',
+    5: 'Hãy mở rộng bản thân, kết giao bạn mới, du lịch khám phá điều mới.',
+    6: 'Hãy yêu thương, chăm sóc người khác, đặc biệt là cha mẹ, người thân.',
+    7: 'Hãy thử sức với cái mới, dấn thân vào trải nghiệm mới để tăng sự hiểu biết bản thân.',
+    8: 'Hãy học kinh doanh, đọc sách logic để nâng cao tư duy.',
+    9: 'Hãy cho đi, giúp đỡ người khác, theo đuổi mục tiêu đến cùng.',
+  };
+
   useEffect(() => {
     const fetchUserInfo = async () => {
       const stored = await AsyncStorage.getItem('userInfo');
@@ -69,6 +82,12 @@ export default function TrendScreen() {
   const getPresentNumbersFromMap = (map: { [key: number]: string }): number[] => {
     return Object.entries(map)
       .filter(([_, value]) => value !== '')
+      .map(([key]) => Number(key));
+  };
+
+  const getMissingNumbers = (map: { [key: number]: string }): number[] => {
+    return Object.entries(map)
+      .filter(([_, value]) => value === '')
       .map(([key]) => Number(key));
   };
 
@@ -107,37 +126,49 @@ export default function TrendScreen() {
   };
 
   return (
-  <View style={styles.flex}>
-    <ImageBackground
-      source={require('@/assets/images/background.jpg')}
-      style={styles.flex}
-      resizeMode="cover"
-    >
-      <View style={styles.overlay}>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <Text style={styles.header}>Mũi Tên Xu Hướng</Text>
+    <View style={styles.flex}>
+      <ImageBackground
+        source={require('@/assets/images/background.jpg')}
+        style={styles.flex}
+        resizeMode="cover"
+      >
+        <View style={styles.overlay}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.scrollContent}
+          >
+            <Text style={styles.header}>Mũi Tên Xu Hướng</Text>
 
-          {trendData.length === 0 ? (
-            <Text style={styles.description}>Không có dữ liệu mũi tên xu hướng</Text>
-          ) : (
-            trendData.map((trend, index) => {
-              const description = getDescription(trend.arrow, trend.status);
-              return (
-                <View key={index} style={styles.trendItem}>
-                  <Text style={styles.description}>{description}</Text>
-                </View>
-              );
-            })
-          )}
-        </ScrollView>
-      </View>
-    </ImageBackground>
-  </View>
-);
+            {trendData.length === 0 ? (
+              <Text style={styles.description}>Không có dữ liệu mũi tên xu hướng</Text>
+            ) : (
+              trendData.map((trend, index) => {
+                const description = getDescription(trend.arrow, trend.status);
+                return (
+                  <View key={index} style={styles.trendItem}>
+                    <Text style={styles.description}>{description}</Text>
+                  </View>
+                );
+              })
+            )}
 
+            {combinedMap && (
+              <>
+                <Text style={styles.header}>Cách khắc phục</Text>
+                {getMissingNumbers(combinedMap).map((num, idx) => (
+                  <View key={idx} style={styles.trendItem}>
+                    <Text style={styles.description}>
+                      Thiếu số {num}: {deficiencyFixes[num]}
+                    </Text>
+                  </View>
+                ))}
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </ImageBackground>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -150,8 +181,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center', // căn giữa theo chiều dọc
-    alignItems: 'center', // căn giữa theo chiều ngang
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
     paddingBottom: 100,
   },
@@ -170,15 +201,5 @@ const styles = StyleSheet.create({
   trendItem: {
     marginBottom: 15,
     alignItems: 'center',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-  },
-  backText: {
-    fontSize: 13,
-    color: 'white',
-    fontWeight: 'bold',
   },
 });

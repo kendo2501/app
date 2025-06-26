@@ -1,19 +1,16 @@
-// app/(tabs)/_layout.tsx
 import { Tabs, useRouter } from 'expo-router';
-import React, { useEffect, useState, useRef } from 'react'; // useRef đã được import
+import React, { useEffect, useState, useRef } from 'react';
 import { Platform, ActivityIndicator, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
-import eventBus from '../../untils/eventBus'; // Đảm bảo đường dẫn đúng
+import eventBus from '../../untils/eventBus';
 
-// Các import khác của bạn
 import { HapticTab } from '../../components/HapticTab';
 import { IconSymbol } from '../../components/ui/IconSymbol';
 import TabBarBackground from '../../components/ui/TabBarBackground';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from '../../hooks/useColorScheme';
-
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -22,9 +19,6 @@ export default function TabLayout() {
   const router = useRouter();
 
   // Ref để đếm số lần nhấn tab "Home"
-  // 0: chưa nhấn lần nào (hoặc vừa reset xong)
-  // 1: đã nhấn 1 lần
-  // 2: nhấn lần thứ 2 -> sẽ reset
   const homeTabPressCountRef = useRef(0);
 
   useEffect(() => {
@@ -34,17 +28,19 @@ export default function TabLayout() {
         if (loggedIn === 'true') {
           setIsLoggedIn(true);
         } else {
+          setIsLoggedIn(false);
           router.replace('/login');
         }
       } catch (error) {
         console.error('Lỗi kiểm tra đăng nhập:', error);
+        setIsLoggedIn(false);
         router.replace('/login');
       } finally {
         setIsLoading(false);
       }
     };
     checkLoginStatus();
-  }, [router]);
+  }, []);
 
   if (isLoading) {
     return (
@@ -55,7 +51,7 @@ export default function TabLayout() {
   }
 
   if (!isLoggedIn) {
-     return null;
+    return null; // Không hiển thị gì nếu chưa đăng nhập
   }
 
   return (
@@ -71,37 +67,35 @@ export default function TabLayout() {
         }),
       }}>
       <Tabs.Screen
-        name="index" // Màn hình "Home"
+        name="index"
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <Ionicons name="home" size={28} color={color} />,
         }}
         listeners={{
           tabPress: (e) => {
-            // Tăng bộ đếm
             homeTabPressCountRef.current += 1;
 
             if (homeTabPressCountRef.current === 2) {
-              // Đây là lần nhấn thứ hai
-              console.log('[TabLayout] Home tab pressed for the 2nd time. Emitting reset event.');
+              console.log('[TabLayout] Home tab pressed 2nd time. Emitting reset event.');
               eventBus.emit('resetHomeInternalNavigator');
-              // Reset bộ đếm về 0 để chu kỳ tiếp theo lại bắt đầu từ đầu
               homeTabPressCountRef.current = 0;
             } else {
-              console.log('[TabLayout] Home tab pressed for the 1st time. Next press will reset.');
+              console.log('[TabLayout] Home tab pressed 1st time.');
             }
           },
         }}
       />
+
       <Tabs.Screen
-  name="user"
-  options={{
-    title: 'User',
-    tabBarIcon: ({ color }) => (
-      <Ionicons name="person" size={28} color={color} />
-    ),
-  }}
-/>
+        name="user"
+        options={{
+          title: 'User',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person" size={28} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

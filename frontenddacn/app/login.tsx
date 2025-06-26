@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,17 @@ const LoginScreen = () => {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Nếu người dùng đã đăng nhập thì chuyển hướng vào home
+  useEffect(() => {
+    const checkLogin = async () => {
+      const loggedIn = await AsyncStorage.getItem('isLoggedIn');
+      if (loggedIn === 'true') {
+        router.replace('/');
+      }
+    };
+    checkLogin();
+  }, []);
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -48,7 +59,7 @@ const LoginScreen = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/login`,{
+      const response = await fetch(`${BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,11 +71,8 @@ const LoginScreen = () => {
       console.log('Phản hồi server:', result);
 
       if (result.success) {
-        if (result.token !== undefined && result.token !== null) {
+        if (result.token) {
           await AsyncStorage.setItem('authToken', result.token);
-        } else {
-          await AsyncStorage.removeItem('authToken');
-          console.warn('Không có token để lưu.');
         }
 
         if (result.data) {
@@ -79,7 +87,7 @@ const LoginScreen = () => {
         setTimeout(() => {
           setToastMessage('');
           router.replace('/');
-        }, 1500);
+        }, 1000);
       } else {
         setToastMessage(result.message || 'Sai tên đăng nhập hoặc mật khẩu');
         setToastType('error');
@@ -95,7 +103,7 @@ const LoginScreen = () => {
 
   return (
     <ImageBackground
-      source={require('../assets/images/backgound(login).jpg')} 
+      source={require('../assets/images/backgound(login).jpg')}
       style={styles.background}
       resizeMode="cover"
     >

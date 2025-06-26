@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  TouchableOpacity,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const layout = [
   [3, 6, 9],
   [2, 5, 8],
-  [1, 4, 7]
+  [1, 4, 7],
 ];
 
 const letterToNumberMap: { [key: string]: number } = {
@@ -20,9 +26,13 @@ const letterToNumberMap: { [key: string]: number } = {
   I: 9, R: 9,
 };
 
+import { BASE_URL } from '@/untils/url';
+
 export default function NameChartScreen() {
   const [chartMap, setChartMap] = useState<{ [key: number]: string }>({});
   const [fullName, setFullName] = useState<string>('Đang tải...');
+  const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
+  const [selectedDescription, setSelectedDescription] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -56,6 +66,27 @@ export default function NameChartScreen() {
     fetchUserInfo();
   }, []);
 
+  const fetchDescriptionFromAPI = async (number: number) => {
+    try {
+      const response = await fetch(`${BASE_URL}/mongo/birthDescription/search?number=${number}`);
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        setSelectedDescription(data[0].description || 'Không có mô tả.');
+      } else {
+        setSelectedDescription('Không tìm thấy dữ liệu.');
+      }
+    } catch (error) {
+      console.error('Lỗi khi gọi API:', error);
+      setSelectedDescription('Lỗi khi tải dữ liệu từ server.');
+    }
+  };
+
+  const handlePressNumber = (num: number) => {
+    setSelectedNumber(num);
+    fetchDescriptionFromAPI(num);
+  };
+
   return (
     <ImageBackground
       source={require('./../assets/images/background.jpg')}
@@ -70,13 +101,24 @@ export default function NameChartScreen() {
           {layout.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.row}>
               {row.map((num) => (
-                <View key={num} style={styles.cell}>
+                <TouchableOpacity
+                  key={num}
+                  style={styles.cell}
+                  onPress={() => handlePressNumber(num)}
+                >
                   <Text style={styles.cellText}>{chartMap[num]}</Text>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           ))}
         </View>
+
+        {selectedNumber && selectedDescription && (
+          <View style={styles.descriptionContainer}>
+            <Text style={styles.descriptionNumber}>Số {selectedNumber}</Text>
+            <Text style={styles.descriptionMeaning}>{selectedDescription}</Text>
+          </View>
+        )}
       </View>
     </ImageBackground>
   );
@@ -126,5 +168,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  descriptionContainer: {
+    marginTop: 30,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  descriptionNumber: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  descriptionMeaning: {
+    fontSize: 16,
+    color: '#fff',
+    textAlign: 'center',
   },
 });

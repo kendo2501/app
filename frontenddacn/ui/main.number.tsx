@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  Button,
   StyleSheet,
   ScrollView,
   Alert,
@@ -10,9 +9,11 @@ import {
   ImageBackground,
   StatusBar,
   SafeAreaView,
+  TouchableOpacity,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@/untils/url';
+import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 
 export default function LifePathScreen() {
   const [dd, setDd] = useState('');
@@ -76,29 +77,41 @@ export default function LifePathScreen() {
 
   return (
     <ImageBackground
-      source={require('../assets/images/background.jpg')} // sửa đường dẫn nếu cần
+      source={require('../assets/images/background.jpg')}
       style={styles.background}
       resizeMode="cover"
     >
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.title}>Tính Số Chủ Đạo</Text>
+          <View style={styles.card}>
+            <Text style={styles.title}>
+              <FontAwesome5 name="hat-wizard" size={24} color="#FFD700" /> Tính Số Chủ Đạo
+            </Text>
 
-          <View style={styles.birthDateContainer}>
-          <Text style={{ color: '#FFFFFF' }}>Ngày sinh: {dd} / {mm} / {yyyy}</Text>
+            <Text style={styles.birthText}>
+              <MaterialIcons name="calendar-today" size={18} color="#FFDD99" /> Ngày sinh: {dd} / {mm} / {yyyy}
+            </Text>
+
+            {/* <TouchableOpacity
+              style={[styles.button, loading && { backgroundColor: '#aaa' }]}
+              onPress={() => fetchLifePath(dd, mm, yyyy)}
+              disabled={loading}
+            >
+              {/* <Text style={styles.buttonText}>Tính lại</Text> */}
+            {/* </TouchableOpacity> */} 
+
+            {loading && <ActivityIndicator size="large" color="#FFD700" style={{ marginTop: 20 }} />}
+
+            {result && !loading && (
+              <View style={styles.resultContainer}>
+                <Text style={styles.resultNumber}>
+                  <MaterialIcons name="looks" size={22} color="#FFD700" /> Số chủ đạo: {result.number}
+                </Text>
+                <Text style={styles.description}>{result.information}</Text>
+              </View>
+            )}
           </View>
-
-          <Button title="Tính lại" onPress={() => fetchLifePath(dd, mm, yyyy)} disabled={loading} />
-
-          {loading && <ActivityIndicator size="large" color="#007bff" style={{ marginTop: 20 }} />}
-
-          {result && !loading && (
-            <View style={styles.resultContainer}>
-              <Text style={styles.result}>Số chủ đạo: {result.number}</Text>
-              <Text style={styles.description}>{result.information}</Text>
-            </View>
-          )}
         </ScrollView>
       </SafeAreaView>
     </ImageBackground>
@@ -116,30 +129,60 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#FFD700',
     textAlign: 'center',
-    color: '#FFFFFF', // Màu trắng để nổi trên nền
+    marginBottom: 20,
   },
-  birthDateContainer: {
-    marginBottom: 15,
+  birthText: {
+    fontSize: 18,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: '#FFD700',
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   resultContainer: {
-    marginTop: 20,
+    marginTop: 25,
   },
-  result: {
+  resultNumber: {
     fontSize: 20,
     fontWeight: 'bold',
-    textAlign: 'center',
     color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 10,
   },
   description: {
-    marginTop: 10,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#E0E0E0',
+    lineHeight: 22,
+    textAlign: 'center',
   },
 });

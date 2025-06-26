@@ -3,38 +3,27 @@ import {
     StyleSheet,
     Text,
     View,
+    ImageBackground,
     TouchableOpacity,
     ActivityIndicator,
     Alert,
     ScrollView,
     Dimensions,
-    ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { searchMandalaInfoByNumber } from '../../api/apiMandala';
+import { getFinalH1Value } from '../../untils/mandalaCalculations';
+
+const BACKGROUND_IMAGE = require('../../assets/images/background.jpg');
+const { width } = Dimensions.get('window');
 
 interface Props {
     onBack: () => void;
 }
 
-interface UserInfo {
-    dd: number;
-}
-
-const { width } = Dimensions.get('window');
-
-const calculateDayNumber = (day: number | null | undefined): number | null => {
-    if (day === null || day === undefined || day <= 0) return null;
-    if (day <= 22) return day;
-    const sum = String(day)
-        .split('')
-        .reduce((s, digit) => s + parseInt(digit, 10), 0);
-    return sum;
-};
-
-export default function H1({ onBack }: Props) {
-    const [dayNumber, setDayNumber] = useState<number | null>(null);
+export default function H1Screen({ onBack }: Props) {
+    const [h1Number, setH1Number] = useState<number | null>(null);
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -42,35 +31,30 @@ export default function H1({ onBack }: Props) {
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
-            setError(null);
             try {
                 const storedUserInfo = await AsyncStorage.getItem('userInfo');
-                if (storedUserInfo) {
-                    const parsedUserInfo: UserInfo = JSON.parse(storedUserInfo);
-                    const calculatedNumber = calculateDayNumber(parsedUserInfo.dd);
-                    setDayNumber(calculatedNumber);
+                if (!storedUserInfo) {
+                    throw new Error('Không tìm thấy thông tin người dùng.');
+                }
 
-                    if (calculatedNumber !== null) {
-                        const description = await searchMandalaInfoByNumber(calculatedNumber);
-                        if (typeof description === 'string' && description.trim().length > 0) {
-                            setMandalaDescription(description);
-                        } else {
-                            setMandalaDescription(`Không tìm thấy mô tả cho số ${calculatedNumber}.`);
-                        }
-                    } else {
-                        setMandalaDescription("Không thể tính số chủ đạo từ ngày sinh.");
-                    }
+                const { dd } = JSON.parse(storedUserInfo);
+                if (typeof dd !== 'number') {
+                    throw new Error('Ngày sinh không hợp lệ.');
+                }
+
+                const h1 = getFinalH1Value(dd);
+                setH1Number(h1);
+
+                if (h1 !== null) {
+                    const desc = await searchMandalaInfoByNumber(h1);
+                    setMandalaDescription(desc || `Không tìm thấy mô tả cho số H1: ${h1}.`);
                 } else {
-                    setError("Không tìm thấy thông tin người dùng.");
-                    setMandalaDescription("Vui lòng đăng nhập lại.");
+                    setMandalaDescription('Không thể tính toán số H1.');
                 }
             } catch (err: any) {
-                let errorMessage = "Lỗi không xác định.";
-                if (err instanceof SyntaxError) errorMessage = "Lỗi định dạng dữ liệu.";
-                else if (err?.message) errorMessage = err.message;
-                setError(errorMessage);
-                setMandalaDescription("Lỗi khi tải mô tả.");
-                Alert.alert("Lỗi", errorMessage);
+                const msg = err?.message || 'Đã xảy ra lỗi khi tải dữ liệu.';
+                setError(msg);
+                Alert.alert('Lỗi', msg);
             } finally {
                 setLoading(false);
             }
@@ -80,11 +64,7 @@ export default function H1({ onBack }: Props) {
     }, []);
 
     return (
-        <ImageBackground
-            source={require('../../assets/images/background.jpg')}
-            style={styles.background}
-            resizeMode="cover"
-        >
+        <ImageBackground source={BACKGROUND_IMAGE} style={styles.background} resizeMode="cover">
             <View style={styles.header}>
                 <TouchableOpacity onPress={onBack} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={28} color="white" />
@@ -92,24 +72,18 @@ export default function H1({ onBack }: Props) {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                {/* H1 Title */}
                 <View style={styles.titleContainer}>
                     <Text style={styles.title}>H1</Text>
                 </View>
 
-                {/* Circle number */}
                 <View style={styles.circle}>
                     {loading ? (
                         <ActivityIndicator size="small" color="#E600E6" />
                     ) : (
-                        <Text style={styles.number}>{dayNumber ?? '-'}</Text>
+                        <Text style={styles.number}>{h1Number ?? '-'}</Text>
                     )}
                 </View>
 
-                {/* Spacer to push description lower */}
-                <View style={{ flex: 1 }} />
-
-                {/* Description box */}
                 <View style={styles.textBox}>
                     <Text style={styles.descriptionText}>
                         {loading
@@ -145,11 +119,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     titleContainer: {
-        
         paddingVertical: 6,
         paddingHorizontal: 20,
         borderRadius: 8,
-      
         marginBottom: 20,
     },
     title: {
@@ -157,7 +129,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#FFFF00',
     },
-   circle: {
+    circle: {
         width: width * 0.5,
         height: width * 0.5,
         borderRadius: (width * 0.5) / 2,

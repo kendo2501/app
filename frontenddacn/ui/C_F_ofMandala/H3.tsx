@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { searchMandalaInfoByNumber } from '../../api/apiMandala';
+import { getFinalH3Value } from '../../untils/mandalaCalculations'; 
 
 interface Props {
     onBack: () => void;
@@ -24,16 +25,8 @@ interface UserInfo {
 
 const { width } = Dimensions.get('window');
 
-const calculateYearNumber = (year: number | null | undefined): number | null => {
-    if (year === null || year === undefined || year <= 0) return null;
-    const sum = String(year)
-        .split('')
-        .reduce((s, digit) => s + parseInt(digit, 10), 0);
-    return sum;
-};
-
 export default function H3({ onBack }: Props) {
-    const [yearNumber, setYearNumber] = useState<number | null>(null);
+    const [h3Number, setH3Number] = useState<number | null>(null);
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -46,27 +39,23 @@ export default function H3({ onBack }: Props) {
                 const storedUserInfo = await AsyncStorage.getItem('userInfo');
                 if (storedUserInfo) {
                     const parsedUserInfo: UserInfo = JSON.parse(storedUserInfo);
-                    const calculatedNumber = calculateYearNumber(parsedUserInfo.yyyy);
-                    setYearNumber(calculatedNumber);
+                    const calculatedH3 = getFinalH3Value(parsedUserInfo.yyyy);
+                    setH3Number(calculatedH3);
 
-                    if (calculatedNumber !== null) {
-                        const description = await searchMandalaInfoByNumber(calculatedNumber);
-                        if (typeof description === 'string' && description.trim().length > 0) {
-                            setMandalaDescription(description);
-                        } else {
-                            setMandalaDescription(`Không tìm thấy mô tả cho số ${calculatedNumber}.`);
-                        }
+                    if (calculatedH3 !== null) {
+                        const description = await searchMandalaInfoByNumber(calculatedH3);
+                        setMandalaDescription(description?.trim() || `Không tìm thấy mô tả cho số ${calculatedH3}.`);
                     } else {
-                        setMandalaDescription("Không thể tính số chủ đạo từ năm sinh.");
+                        setMandalaDescription("Năm sinh không hợp lệ.");
                     }
                 } else {
                     setError("Không tìm thấy thông tin người dùng.");
                     setMandalaDescription("Vui lòng đăng nhập lại.");
                 }
             } catch (err: any) {
-                let errorMessage = "Lỗi không xác định.";
-                if (err instanceof SyntaxError) errorMessage = "Lỗi định dạng dữ liệu.";
-                else if (err?.message) errorMessage = err.message;
+                const errorMessage = err instanceof SyntaxError
+                    ? "Lỗi định dạng dữ liệu."
+                    : err?.message || "Lỗi không xác định.";
                 setError(errorMessage);
                 setMandalaDescription("Lỗi khi tải mô tả.");
                 Alert.alert("Lỗi", errorMessage);
@@ -91,23 +80,20 @@ export default function H3({ onBack }: Props) {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                {/* H3 Title */}
                 <View style={styles.titleContainer}>
                     <Text style={styles.title}>H3</Text>
                 </View>
 
-                {/* Circle number */}
                 <View style={styles.circle}>
                     {loading ? (
                         <ActivityIndicator size="small" color="#E600E6" />
                     ) : (
-                        <Text style={styles.number}>{yearNumber ?? '-'}</Text>
+                        <Text style={styles.number}>{h3Number ?? '-'}</Text>
                     )}
                 </View>
 
                 <View style={{ flex: 1 }} />
 
-                {/* Description box */}
                 <View style={styles.textBox}>
                     <Text style={styles.descriptionText}>
                         {loading
@@ -121,9 +107,7 @@ export default function H3({ onBack }: Props) {
 }
 
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-    },
+    background: { flex: 1 },
     header: {
         position: 'absolute',
         top: 40,
