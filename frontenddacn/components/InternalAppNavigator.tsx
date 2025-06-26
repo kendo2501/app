@@ -37,7 +37,7 @@ function HomeScreen({ navigateTo }: { navigateTo: (screen: ActiveScreen) => void
     { title: 'BIỂU ĐỒ TỔNG HỢP', screen: 'summaryChart' as ActiveScreen },
     { title: 'MŨI TÊN XU HƯỚNG', screen: 'trendArrow' as ActiveScreen },
     { title: 'CÁC ĐỈNH KIM TỰ', screen: 'pyramidNail' as ActiveScreen },
-    { title: 'PERSONAL YEAR', screen: 'personalYear' as ActiveScreen },
+    { title: 'NĂM CÁ NHÂN', screen: 'personalYear' as ActiveScreen },
     { title: 'MANDALA', screen: 'mandala' as ActiveScreen },
   ];
 
