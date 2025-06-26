@@ -31,8 +31,15 @@ export default function InfoStaticScreen() {
     fetchUserInfo();
   }, []);
 
-  const handleLogout = () => {
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.setItem('isLoggedIn', 'false'); // Hoặc dùng removeItem nếu muốn xoá hoàn toàn
+      // await AsyncStorage.removeItem('isLoggedIn');
+      // await AsyncStorage.removeItem('userInfo'); // tuỳ chọn nếu bạn muốn xoá luôn dữ liệu người dùng
+      router.replace('/login');
+    } catch (error) {
+      console.error('Lỗi khi đăng xuất:', error);
+    }
   };
 
   return (

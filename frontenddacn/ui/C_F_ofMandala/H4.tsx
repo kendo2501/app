@@ -12,29 +12,23 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { searchMandalaInfoByNumber } from '../../api/apiMandala'; // ✅ H4-specific API
+import { searchMandalaInfoByNumber } from '../../api/apiMandala';
+import { getFinalH4Value } from '../../untils/mandalaCalculations'; 
 
 interface Props {
     onBack: () => void;
 }
 
 interface UserInfo {
+    dd: number;
+    mm: number;
     yyyy: number;
 }
 
 const { width } = Dimensions.get('window');
 
-const calculateYearNumber = (year: number | null | undefined): number | null => {
-    if (year === null || year === undefined || year <= 0) return null;
-    if (year <= 22) return year;
-    const sum = String(year)
-        .split('')
-        .reduce((s, digit) => s + parseInt(digit, 10), 0);
-    return sum;
-};
-
 export default function H4({ onBack }: Props) {
-    const [yearNumber, setYearNumber] = useState<number | null>(null);
+    const [h4Number, setH4Number] = useState<number | null>(null);
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -43,31 +37,28 @@ export default function H4({ onBack }: Props) {
         const loadData = async () => {
             setLoading(true);
             setError(null);
+
             try {
                 const storedUserInfo = await AsyncStorage.getItem('userInfo');
                 if (storedUserInfo) {
                     const parsedUserInfo: UserInfo = JSON.parse(storedUserInfo);
-                    const calculatedNumber = calculateYearNumber(parsedUserInfo.yyyy);
-                    setYearNumber(calculatedNumber);
+                    const calculatedH4 = getFinalH4Value(parsedUserInfo.dd, parsedUserInfo.mm, parsedUserInfo.yyyy);
+                    setH4Number(calculatedH4);
 
-                    if (calculatedNumber !== null) {
-                        const description = await searchMandalaInfoByNumber(calculatedNumber);
-                        if (typeof description === 'string' && description.trim().length > 0) {
-                            setMandalaDescription(description);
-                        } else {
-                            setMandalaDescription(`Không tìm thấy mô tả cho số ${calculatedNumber}.`);
-                        }
+                    if (calculatedH4 !== null) {
+                        const description = await searchMandalaInfoByNumber(calculatedH4);
+                        setMandalaDescription(description?.trim() || `Không tìm thấy mô tả cho số ${calculatedH4}.`);
                     } else {
-                        setMandalaDescription("Không thể tính số từ năm sinh.");
+                        setMandalaDescription("Dữ liệu ngày tháng năm không hợp lệ.");
                     }
                 } else {
                     setError("Không tìm thấy thông tin người dùng.");
                     setMandalaDescription("Vui lòng đăng nhập lại.");
                 }
             } catch (err: any) {
-                let errorMessage = "Lỗi không xác định.";
-                if (err instanceof SyntaxError) errorMessage = "Lỗi định dạng dữ liệu.";
-                else if (err?.message) errorMessage = err.message;
+                const errorMessage = err instanceof SyntaxError
+                    ? "Lỗi định dạng dữ liệu."
+                    : err?.message || "Lỗi không xác định.";
                 setError(errorMessage);
                 setMandalaDescription("Lỗi khi tải mô tả.");
                 Alert.alert("Lỗi", errorMessage);
@@ -100,7 +91,7 @@ export default function H4({ onBack }: Props) {
                     {loading ? (
                         <ActivityIndicator size="small" color="#E600E6" />
                     ) : (
-                        <Text style={styles.number}>{yearNumber ?? '-'}</Text>
+                        <Text style={styles.number}>{h4Number ?? '-'}</Text>
                     )}
                 </View>
 
@@ -119,9 +110,7 @@ export default function H4({ onBack }: Props) {
 }
 
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-    },
+    background: { flex: 1 },
     header: {
         position: 'absolute',
         top: 40,

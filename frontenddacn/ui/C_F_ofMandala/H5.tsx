@@ -13,8 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { searchMandalaInfoByNumber } from '../../api/apiMandala';
-
-const BACKGROUND_IMAGE = require('../../assets/images/background.jpg');
+import { getFinalH5Value } from '../../untils/mandalaCalculations';
 
 interface Props {
     onBack: () => void;
@@ -28,28 +27,7 @@ interface UserInfo {
 
 const { width } = Dimensions.get('window');
 
-const sumDigits = (num: number): number => {
-    return String(num)
-        .split('')
-        .reduce((sum, digit) => sum + parseInt(digit, 10), 0);
-};
-
-const getFinalH5Value = (dd: number, mm: number, yyyy: number): number | null => {
-    if (!dd || !mm || !yyyy) return null;
-
-    const h1 = dd <= 22 ? dd : sumDigits(dd);
-    const h2 = mm;
-    const h3 = sumDigits(yyyy);
-    let h4 = dd + mm + yyyy;
-    while (h4 > 22) h4 = sumDigits(h4);
-
-    let h5 = h1 + h2 + h3 + h4;
-    while (h5 > 22) h5 = sumDigits(h5);
-
-    return h5;
-};
-
-export default function H5Screen({ onBack }: Props) {
+export default function H5({ onBack }: Props) {
     const [h5Number, setH5Number] = useState<number | null>(null);
     const [mandalaDescription, setMandalaDescription] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -59,38 +37,45 @@ export default function H5Screen({ onBack }: Props) {
         const loadData = async () => {
             setLoading(true);
             setError(null);
+
             try {
                 const storedUserInfo = await AsyncStorage.getItem('userInfo');
                 if (storedUserInfo) {
-                    const parsed: UserInfo = JSON.parse(storedUserInfo);
-                    const h5 = getFinalH5Value(parsed.dd, parsed.mm, parsed.yyyy);
-                    setH5Number(h5);
+                    const parsedUserInfo: UserInfo = JSON.parse(storedUserInfo);
+                    const calculatedH5 = getFinalH5Value(parsedUserInfo.dd, parsedUserInfo.mm, parsedUserInfo.yyyy);
+                    setH5Number(calculatedH5);
 
-                    if (h5 !== null) {
-                        const desc = await searchMandalaInfoByNumber(h5);
-                        setMandalaDescription(desc || `Không tìm thấy mô tả cho số ${h5}.`);
+                    if (calculatedH5 !== null) {
+                        const description = await searchMandalaInfoByNumber(calculatedH5);
+                        setMandalaDescription(description?.trim() || `Không tìm thấy mô tả cho số ${calculatedH5}.`);
                     } else {
-                        setMandalaDescription("Lỗi tính toán H5.");
+                        setMandalaDescription("Không thể tính H5 do dữ liệu không hợp lệ.");
                     }
                 } else {
                     setError("Không tìm thấy thông tin người dùng.");
                     setMandalaDescription("Vui lòng đăng nhập lại.");
                 }
             } catch (err: any) {
-                const message = err?.message || 'Lỗi không xác định.';
-                setError(message);
-                setMandalaDescription("Đã xảy ra lỗi.");
-                Alert.alert("Lỗi", message);
+                const errorMessage = err instanceof SyntaxError
+                    ? "Lỗi định dạng dữ liệu."
+                    : err?.message || "Lỗi không xác định.";
+                setError(errorMessage);
+                setMandalaDescription("Lỗi khi tải mô tả.");
+                Alert.alert("Lỗi", errorMessage);
             } finally {
                 setLoading(false);
             }
         };
+
         loadData();
     }, []);
 
     return (
-        <ImageBackground source={BACKGROUND_IMAGE} style={styles.background} resizeMode="cover">
-            {/* Back button */}
+        <ImageBackground
+            source={require('../../assets/images/background.jpg')}
+            style={styles.background}
+            resizeMode="cover"
+        >
             <View style={styles.header}>
                 <TouchableOpacity onPress={onBack} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={28} color="white" />
@@ -98,12 +83,10 @@ export default function H5Screen({ onBack }: Props) {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                {/* Title */}
                 <View style={styles.titleContainer}>
                     <Text style={styles.title}>H5</Text>
                 </View>
 
-                {/* Number circle */}
                 <View style={styles.circle}>
                     {loading ? (
                         <ActivityIndicator size="small" color="#E600E6" />
@@ -112,7 +95,8 @@ export default function H5Screen({ onBack }: Props) {
                     )}
                 </View>
 
-                {/* Description */}
+                <View style={{ flex: 1 }} />
+
                 <View style={styles.textBox}>
                     <Text style={styles.descriptionText}>
                         {loading
@@ -126,9 +110,7 @@ export default function H5Screen({ onBack }: Props) {
 }
 
 const styles = StyleSheet.create({
-    background: {
-        flex: 1,
-    },
+    background: { flex: 1 },
     header: {
         position: 'absolute',
         top: 40,

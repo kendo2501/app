@@ -8,6 +8,7 @@ const birthDescription = require('../models/_birthDescription');
 const HighPeaks = require('../models/highPeaks');
 const MainNumber = require('../models/mainNumber');
 const PersonalYear = require('../models/personalYear');
+const Mandala = require('../models/mandala');
 
 // Import controllers
 const lifePathController = require('../controllers/lifePathController');

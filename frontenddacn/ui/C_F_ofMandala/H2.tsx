@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { searchMandalaInfoByNumber } from '../../api/apiMandala';
+import { getFinalH2Value } from '../../untils/mandalaCalculations'; 
 
 interface Props {
     onBack: () => void;
@@ -23,13 +24,6 @@ interface UserInfo {
 }
 
 const { width } = Dimensions.get('window');
-
-const calculateH2 = (monthInput: number | string | null | undefined): number | null => {
-    const monthValue = Number(monthInput);
-    return !isNaN(monthValue) && Number.isInteger(monthValue) && monthValue >= 1 && monthValue <= 12
-        ? monthValue
-        : null;
-};
 
 export default function H2({ onBack }: Props) {
     const [h2Number, setH2Number] = useState<number | null>(null);
@@ -45,7 +39,7 @@ export default function H2({ onBack }: Props) {
                 const storedUserInfo = await AsyncStorage.getItem('userInfo');
                 if (storedUserInfo) {
                     const parsedUserInfo: UserInfo = JSON.parse(storedUserInfo);
-                    const calculatedH2 = calculateH2(parsedUserInfo.mm);
+                    const calculatedH2 = getFinalH2Value(parsedUserInfo.mm);
                     setH2Number(calculatedH2);
 
                     if (calculatedH2 !== null) {
