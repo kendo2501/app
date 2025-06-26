@@ -9,7 +9,6 @@ import {
   ImageBackground,
   SafeAreaView,
   StatusBar,
-  TouchableOpacity,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@/untils/url';
@@ -26,22 +25,33 @@ export default function PersonalYearScreen() {
       Alert.alert('Lỗi', 'Ngày sinh không hợp lệ');
       return;
     }
+
     setLoading(true);
+    console.log('Gửi đến:', `${BASE_URL}/personal-year`);
+    console.log('Dữ liệu:', { dd: d, mm: m, yyyy: y });
+
     try {
       const response = await fetch(`${BASE_URL}/personal-year`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dd: d, mm: m, yyyy: y }),
       });
+
+      console.log('Status code:', response.status);
+
       const data = await response.json();
+      console.log('Response từ server:', data);
+
       if (data.success) {
-        setResult({ number: data.number, information: data.information });
+        setResult({ number: data.number.toString(), information: data.information });
       } else {
         Alert.alert('Lỗi', data.message || 'Lỗi khi tính năm cá nhân');
+        setResult(null);
       }
     } catch (error) {
-      console.error(error);
+      console.error('Lỗi fetch:', error);
       Alert.alert('Lỗi kết nối', 'Không thể kết nối đến server');
+      setResult(null);
     } finally {
       setLoading(false);
     }
@@ -54,10 +64,15 @@ export default function PersonalYearScreen() {
         if (userInfoString) {
           const userInfo = JSON.parse(userInfoString);
           if (userInfo.dd && userInfo.mm && userInfo.yyyy) {
-            setDd(userInfo.dd.toString());
-            setMm(userInfo.mm.toString());
-            setYyyy(userInfo.yyyy.toString());
-            fetchPersonalYear(userInfo.dd.toString(), userInfo.mm.toString(), userInfo.yyyy.toString());
+            const d = userInfo.dd.toString();
+            const m = userInfo.mm.toString();
+            const y = userInfo.yyyy.toString();
+
+            setDd(d);
+            setMm(m);
+            setYyyy(y);
+
+            fetchPersonalYear(d, m, y);
           } else {
             Alert.alert('Lỗi', 'Không tìm thấy ngày sinh trong thông tin người dùng');
           }
@@ -85,14 +100,6 @@ export default function PersonalYearScreen() {
           <View style={styles.birthDateContainer}>
             <Text style={styles.subtitle}>📅 Ngày sinh: {dd} / {mm} / {yyyy}</Text>
           </View>
-
-          {/* <TouchableOpacity
-            style={[styles.button, loading && { backgroundColor: '#888' }]}
-            onPress={() => fetchPersonalYear(dd, mm, yyyy)}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>🔁 Tính lại</Text>
-          </TouchableOpacity> */}
 
           {loading && <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />}
 
@@ -135,18 +142,6 @@ const styles = StyleSheet.create({
   },
   birthDateContainer: {
     marginBottom: 20,
-  },
-  button: {
-    backgroundColor: '#3498db',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   resultContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',

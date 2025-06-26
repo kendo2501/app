@@ -12,9 +12,10 @@ function calculatePersonalYear(dd, mm, yyyy) {
   const combined = dd + mm + currentYear;
   let total = combined.split('').map(Number).reduce((a, b) => a + b, 0);
 
-  while (total > 9 && total !== 11 && total !== 22) {
+  while (total > 9) {
     total = total.toString().split('').map(Number).reduce((a, b) => a + b, 0);
   }
+  
 
   return total;
 }
