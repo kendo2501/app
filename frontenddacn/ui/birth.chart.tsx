@@ -65,18 +65,28 @@ export default function BirthChartScreen() {
     }
   };
 
-  const renderCell = (num: number) => (
+ const handlePressNumber = (num: number) => {
+  const hasValue = dobMap[num] && dobMap[num].length > 0;
+
+  return (
     <Pressable
       key={num}
       style={styles.cellWrapper}
       onPress={() => {
-        setSelectedNumber(num);
-        fetchDescriptionFromAPI(num);
+        if (hasValue) {
+          setSelectedNumber(num);
+          fetchDescriptionFromAPI(num);
+        } else {
+          setSelectedNumber(null);
+          setSelectedDescription(null);
+        }
       }}
     >
       <Text style={styles.cellText}>{dobMap[num]}</Text>
     </Pressable>
   );
+};
+
 
   return (
     <ImageBackground
@@ -99,7 +109,7 @@ export default function BirthChartScreen() {
         <View style={styles.chart}>
           {layout.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.row}>
-              {row.map(renderCell)}
+              {row.map(handlePressNumber)}
             </View>
           ))}
         </View>

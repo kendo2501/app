@@ -1,7 +1,14 @@
-import { calculateCombinedMap } from '@/untils/calculatorsumary';
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  Pressable,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { calculateCombinedMap } from '@/untils/calculatorsumary';
+import { BASE_URL } from '@/untils/url';
 
 const layout = [
   [3, 6, 9],
@@ -18,6 +25,8 @@ export default function CombinedChartScreen() {
   } | null>(null);
 
   const [combinedMap, setCombinedMap] = useState<{ [key: number]: string }>({});
+  const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
+  const [selectedDescription, setSelectedDescription] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserInfoAndCalculate = async () => {
@@ -34,11 +43,44 @@ export default function CombinedChartScreen() {
     fetchUserInfoAndCalculate();
   }, []);
 
-  const renderCell = (num: number) => (
-    <View key={num} style={styles.cell}>
+  const fetchDescriptionFromAPI = async (number: number) => {
+    try {
+      const response = await fetch(`${BASE_URL}/mongo/birthDescription/search?number=${number}`);
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        setSelectedDescription(data[0].description || 'Không có mô tả.');
+      } else {
+        setSelectedDescription('Không tìm thấy dữ liệu.');
+      }
+    } catch (error) {
+      console.error('Lỗi khi gọi API:', error);
+      setSelectedDescription('Lỗi khi tải dữ liệu từ server.');
+    }
+  };
+
+const handlePressNumber = (num: number) => {
+  const hasValue = combinedMap[num] && combinedMap[num].length > 0;
+
+  return (
+    <Pressable
+      key={num}
+      style={styles.cell}
+      onPress={() => {
+        if (hasValue) {
+          setSelectedNumber(num);
+          fetchDescriptionFromAPI(num);
+        } else {
+          // Nếu không có số, xóa trạng thái mô tả
+          setSelectedNumber(null);
+          setSelectedDescription(null);
+        }
+      }}
+    >
       <Text style={styles.cellText}>{combinedMap[num]}</Text>
-    </View>
+    </Pressable>
   );
+};
 
   if (!userInfo) {
     return (
@@ -70,10 +112,17 @@ export default function CombinedChartScreen() {
         <View style={styles.chart}>
           {layout.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.row}>
-              {row.map(renderCell)}
+              {row.map(handlePressNumber)}
             </View>
           ))}
         </View>
+
+        {selectedNumber && selectedDescription && (
+          <View style={styles.descriptionBox}>
+            <Text style={styles.descriptionTitle}>Số {selectedNumber}</Text>
+            <Text style={styles.descriptionText}>{selectedDescription}</Text>
+          </View>
+        )}
       </View>
     </ImageBackground>
   );
@@ -129,5 +178,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  descriptionBox: {
+    marginTop: 30,
+    padding: 15,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 10,
+    alignItems: 'center',
+    width: '90%',
+  },
+  descriptionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#000',
+  },
+  descriptionText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
   },
 });

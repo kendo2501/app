@@ -82,10 +82,18 @@ export default function NameChartScreen() {
     }
   };
 
-  const handlePressNumber = (num: number) => {
+const handlePressNumber = (num: number) => {
+  const hasValue = chartMap[num] && chartMap[num].length > 0;
+
+  if (hasValue) {
     setSelectedNumber(num);
-    fetchDescriptionFromAPI(num);
-  };
+    fetchDescriptionFromAPI(num); // hoặc lấy description nội bộ nếu có
+  } else {
+    // Không hiển thị nếu ô không có số
+    setSelectedNumber(null);
+    setSelectedDescription(null);
+  }
+};
 
   return (
     <ImageBackground
@@ -173,7 +181,7 @@ const styles = StyleSheet.create({
     marginTop: 30,
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -182,12 +190,12 @@ const styles = StyleSheet.create({
   descriptionNumber: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#000',
     marginBottom: 8,
   },
   descriptionMeaning: {
     fontSize: 16,
-    color: '#fff',
+    color: '#000',
     textAlign: 'center',
   },
 });
